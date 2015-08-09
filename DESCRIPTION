@@ -1,0 +1,15 @@
+Package: chaseR
+Title: chaseR: Comparing Heuristics with Adaptive Sample size Estimation using R
+Version: 0.0.0.9000
+Authors@R: person("Felipe", "Campelo", , "fcampelo@ufmg.br", role = c("aut",
+    "cre"))
+Description: Provides functions for sample size determination in experimental
+    comparisons of evolutionary algorithms and other (meta-)heuristics.
+Depends:
+    R (>= 3.2.1)
+Imports:
+    boot
+Suggests:
+    ExpDE
+License: GPL-2
+LazyData: true
