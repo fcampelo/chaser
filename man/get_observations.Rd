@@ -7,11 +7,11 @@
 get_observations(algo, problem, n = 1)
 }
 \arguments{
-\item{algo}{a list object containing the definitions of the algorithm See
-\code{\link{Algorithm structure}} for details.}
+\item{algo}{a list object containing the definitions of the algorithm.
+See \code{\link{run_chase}} for details.}
 
 \item{problem}{a list object containing the definitions of the problem
-instance. See \code{\link{Problem structure}} for details.}
+instance. See \code{\link{run_chase}} for details.}
 
 \item{n}{number of observations to generate.}
 }
@@ -33,53 +33,10 @@ Call algorithm routine for the solution of a problem instance
 \details{
 The details of this routine come here...
 }
-\section{Problem structure}{
-
-The \code{problem} list must contain all relevant parameters that define the
-problem instance. \code{problem} is a named list containing at least the following
-fields:
-\itemize{
-   \item \code{$name} - name of the problem instance function, that is, a
-         routine that calculates y = f(x)
-   \item \code{$xmin} - vector of lower bounds of each variable
-   \item \code{$xmax} - vector of upper bounds of each variable
-}
-
-All other required parameters for the problem must be included as fields in
-this list.
-}
-
-\section{Algorithm structure}{
-
-The \code{algo} list must contain all relevant parameters that define the
-algorithm that will be applied to solve the \code{problem}. \code{algo} is a
-named list containing the following fields:
-\itemize{
-   \item \code{$name} - name of the function that calls the algorithm
-   \item \code{$pars} - named list of all parameters needed to set up the
-         algorithm (e.g., population size, stop criteria, operator names and
-         parameters, stop criteria, etc.).
-}
-
-The function defined by the routine \code{algo$name} must have the following
-structure:
-
-   \preformatted{
-         myalgo <- function(pars, problem){
-               ...
-               return(results)
-         }
-   }
-
-That is, it must be able to run if called as
-   \code{myalgo(algo$pars, problem)}.
-
-The algorithm routine should return a list containing at least the function
-value obtained (result$f). More information can also be returned (such as the
-solution found, number of function evaluations, etc.) but this additional
-info is not used by \code{get_observation()}.
-}
 \author{
 Felipe Campelo
+}
+\seealso{
+\link{run_chase}
 }
 

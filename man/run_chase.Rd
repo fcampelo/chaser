@@ -5,23 +5,25 @@
 \title{Comparison of Heuristics with Adaptive Sample size Estimation}
 \usage{
 run_chase(problems, algorithms, dmax, method = c("parametric", "bootstrap"),
-  alpha = 0.05, nstart = 25, nmax = Inf, seed = NULL, nboot = 1000,
-  ncpus = 1)
+  stat = c("mean", "median"), alpha = 0.05, nstart = 25, nmax = Inf,
+  seed = NULL, nboot = 1000, ncpus = 1)
 }
 \arguments{
 \item{problems}{a list object containing lists defining all problem
 instances to be used in the experiment.
-See \code{\link{Problems and algorithms}} for details.}
+See \code{Problems and Algorithms} for details.}
 
 \item{algorithms}{a list object containing lists defining all algorithms to
 be used in the experiment.
-See \code{\link{Problems and algorithms}} for details.}
+See \code{Problems and Algorithms} for details.}
 
 \item{dmax}{desired confidence interval halfwidth for the estimated mean
 performance of each algorithm on each instance.}
 
 \item{method}{method used to calculate the sample size for each pair
 algorithm-problem.}
+
+\item{stat}{statistic of interest (mean, median, ...)}
 
 \item{alpha}{significance level for the confidence intervals on the means of
 each algo-problem pair. Defaults to \code{alpha = 0.05}.}
@@ -58,40 +60,93 @@ Run experiment using adaptive sample size estimation.
 \details{
 The details of this routine come here...
 }
-\section{Problems and algorithms}{
+\section{Problems and Algorithms}{
 
-Parameters \code{problems} and \code{algorithms} must be a list of
-\code{problem} (\code{algo}) specifications, each one a list itself.
-See \code{\link{run_nreps}} for details on the specification of each
-\code{problem} and \code{algo} component.
+Parameters \code{problems} and \code{algorithms} must each be a list of
+\code{problem} (\code{algorithm}) specifications, defined according to the
+instructions given below.
+
+Each component of \code{problems} is a list containing all relevant
+parameters that define the problem instance. \code{problems[[j]]} must be
+a named list containing at least the following fields:
+
+\itemize{
+   \item \code{$name} - name of the problem instance function, that is, a
+         routine that calculates y = f(x)
+   \item \code{$xmin} - vector of lower bounds of each variable
+   \item \code{$xmax} - vector of upper bounds of each variable
 }
 
-\section{Random seed}{
+If the problem requires additional parameters, these must also be provided
+as fields.
+
+Similarly, the \code{algorithms} parameter must contain a list where each
+element provides the full specification of an algorithm. More specifically,
+\code{algorithms[[i]]} is a named list containing all relevant
+parameters that define an algorithm that will be applied to solve the
+\code{problems}.
+
+\code{algorithms[[i]]} must contain a \code{$name} field (the name of the
+function that calls the algorithm) and any other elements/parameters that
+\code{algorithms[[i]]$name} requires (e.g., population size, stop criteria,
+operator names and parameters, stop criteria etc.).
+
+The function defined by the routine \code{algorithms[[i]]$name} must have the
+following structure: supposing that the list in \code{algorithms[[1]]} has
+fields \code{$name = myalgo} and \code{$par1, $par2}, then:
+
+   \preformatted{
+         myalgo <- function(par1, par2, probpars, ...){
+               # do stuff
+               # ...
+               return(results)
+         }
+   }
+
+That is, it must be able to run if called as:
+
+   \preformatted{
+         # remove '$name' field from list of arguments
+         # and include 'probpars' as a field
+         myargs          <- algorithms[[1]][names(algorithms[[1]]) != "name"]
+         myargs$probpars <- probpars
+
+         # call function
+         do.call(algorithms[[1]]$name,
+                 args = myargs)
+   }
+
+The \code{algorithms[[i]]$name} routine must return a list containing (at
+least) the function value of the final solution obtained (\code{result$f)}
+after a given run.
+}
+
+\section{Random Seed}{
 
 The \code{seed} argument receives the desired seed for the PRNG (used, for
 instance, in the bootstrap resampling). This value can be set for
 reproducibility purposes. The value of this parameter defaults to NULL, in
 which case the seed is arbitrarily set using \code{as.numeric(Sys.time())}.
 The value used as seed is always reported in the output structure.
+
+Notice that this \code{seed} is not passed to the algorithm routines in the
+current version.
 }
 
 \section{Warning}{
 
-For distribution-free techniques the initial number of observations
-\code{nstart} should be relatively high (> 25 if extreme outliers are not
-expected, > 50 for the general case) to guarantee good statistical
-properties (particularly compliance with the nominal type-I error
+In the general case the initial number of observations
+(\code{nstart}) should be relatively high (> 25 if extreme outliers are not
+expected, > 50 if that assumption can't be made) to guarantee good
+statistical properties (particularly compliance with nominal type-I error
 rate \code{alpha}). However, if some distributional assumptions can be
 made (e.g., low skewness of the population), then \code{nstart} can in
 principle be as small as 5.
+
 In general, higher sample sizes are the price to pay for abandoning
 distributional assumptions. Use lower values of \code{nstart} with caution.
 }
 \author{
-Felipe Campelo
-}
-\seealso{
-\code{\link{run_nreps}} for more information on the definition of
- problem and algorithm lists
+Felipe Campelo (\email{fcampelo@ufmg.br})
 }
 
