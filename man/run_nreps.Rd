@@ -4,60 +4,115 @@
 \alias{run_nreps}
 \title{Automatically determine sample size for an algorithm on a problem instance}
 \usage{
-run_nreps(problem, algo, dmax, method = c("parametric", "bootstrap"),
-  alpha = 0.05, nstart = 25, nmax = Inf, seed = NULL, nboot = 1000,
-  ncpus = 1)
+run_nreps(instance, algo, dmax, alpha = 0.05, nstart = 10, nmax = Inf,
+  seed = NULL)
 }
 \arguments{
-\item{problem}{a list object containing the definitions of the problem
-instance. See \code{\link{run_chase}} for details.}
+\item{instance}{a list object containing the definitions of the problem
+instance. See Section \code{Problems and Algorithms} for details.}
 
-\item{algo}{a list object containing the definitions of the algorithm See
-\code{\link{run_chase}} for details.}
+\item{algo}{a list object containing the definitions of the algorithm.
+See Section \code{Problems and Algorithms} for details.}
 
 \item{dmax}{desired confidence interval halfwidth for the estimated mean
 performance of algorithm \code{algo} on instance \code{problem}.}
 
-\item{method}{method used to calculate the confidence interval. Currently
-supported methods are "parametric" and "bootstrap"}
-
-\item{alpha}{significance level for the confidence intervals.}
+\item{alpha}{significance level for the confidence intervals.
+Defaults to \code{alpha = 0.05}.}
 
 \item{nstart}{initial number of algorithm runs.
-See \code{\link{run_chase}} for details.}
+Defaults to \code{nstart = 10}.}
 
 \item{nmax}{maximum allowed sample size.
 Defaults to \code{nmax = Inf}.}
 
 \item{seed}{seed for the random number generator.
-Defaults to NULL. See \code{\link{run_chase}} for details.}
-
-\item{nboot}{number of bootstrap samples.}
-
-\item{ncpus}{number of cores to use for bootstrap.}
+     Defaults to \code{seed = NULL}.}
 }
 \value{
 a list object containing the following items:
 \itemize{
-   \item \code{observations} - vector of observed performance values
+   \item \code{x} - vector of observed performance values
    \item \code{xbar} - sample mean of the performance of \code{algo} on \code{problem}
    \item \code{se} - standard error of the mean
+   \item \code{delta} - the CI halfwidth
    \item \code{n} - number of observations
    \item \code{seed} - the seed used for the PRNG
 }
 }
 \description{
 Iteratively calculates the required sample size for an algorithm on a
-   problem, so that the final number of replicates yields an estimation of
-   mean performance with a fixed uncertainty.
+   problem instance, so that the final number of replicates yields an
+   estimation of mean performance with a predefined maximum uncertainty.
 }
-\details{
-The details of this routine come here...
+\section{Instances and Algorithms}{
+
+Parameters \code{instance} and \code{algorithm} must each be a list of
+instance (algorithm) specifications, defined according to the instructions
+given below.
+
+\code{instance} is a named list containing all relevant parameters that
+define the problem instance. This list must contain at least the following
+fields:
+
+\itemize{
+   \item \code{$name} - name of the problem instance function, that is, a
+         routine that calculates y = f(x)
+   \item \code{$xmin} - vector of lower bounds of each variable
+   \item \code{$xmax} - vector of upper bounds of each variable
+}
+
+If the instance requires additional parameters, these must also be provided
+as named fields.
+
+Similarly, \code{algorithm} must be a named list containing all relevant
+parameters that define the algorithm to be applied for solving the problem
+instance.
+
+\code{algorithm} must contain a \code{$name} field (the name of the
+function that calls the algorithm) and any other elements/parameters that
+\code{algorithm$name} requires (e.g., population size, stop criteria,
+operator names and parameters, etc.).
+
+The function defined by the routine \code{algorithm$name} must have the
+following structure: supposing that the list in \code{algorithm} has
+fields \code{$name = myalgo} and \code{$par1 = "a", $par2 = 5}, then:
+
+   \preformatted{
+         myalgo <- function(par1, par2, instance, ...){
+               # do stuff
+               # ...
+               return(results)
+         }
+   }
+
+That is, it must be able to run if called as:
+
+   \preformatted{
+         # remove '$name' field from list of arguments
+         # and include the problem definition as field 'instance'
+         myargs          <- algorithm[names(algorithm) != "name"]
+         myargs$instance <- instance
+
+         # call function
+         do.call(algorithm$name,
+                 args = myargs)
+   }
+
+The \code{algorithm$name} routine must return a list containing (at
+least) the function value of the final solution obtained
+(\code{result$Fbest)} after a given run.
+}
+
+\section{References}{
+
+Paul Mathews. "Sample size calculations: Practical methods for engineers and
+scientists". Mathews Malnar and Bailey, 2010.
+Botella, J., Ximenez, C., Revuelta, J. and Suero, M.,
+"Optimization of sample size in controlled experiments: the CLAST rule.",
+Behavior Research Methods, 38(1) 65 - 76, 2006
 }
 \author{
-Felipe Campelo
-}
-\seealso{
-run_chase
+Fernanda Takahashi (fernandact@ufmg.br), Felipe Campelo (fcampelo@ufmg.br)
 }
 

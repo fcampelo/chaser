@@ -1,87 +1,158 @@
 #' Automatically determine sample size for an algorithm on a problem instance
 #'
 #' Iteratively calculates the required sample size for an algorithm on a
-#'    problem, so that the final number of replicates yields an estimation of
-#'    mean performance with a fixed uncertainty.
+#'    problem instance, so that the final number of replicates yields an
+#'    estimation of mean performance with a predefined maximum uncertainty.
 #'
-#' The details of this routine come here...
+#' @section Instances and Algorithms:
+#' Parameters \code{instance} and \code{algorithm} must each be a list of
+#' instance (algorithm) specifications, defined according to the instructions
+#' given below.
+#'
+#' \code{instance} is a named list containing all relevant parameters that
+#' define the problem instance. This list must contain at least the following
+#' fields:
+#'
+#' \itemize{
+#'    \item \code{$name} - name of the problem instance function, that is, a
+#'          routine that calculates y = f(x)
+#'    \item \code{$xmin} - vector of lower bounds of each variable
+#'    \item \code{$xmax} - vector of upper bounds of each variable
+#' }
+#'
+#' If the instance requires additional parameters, these must also be provided
+#' as named fields.
+#'
+#' Similarly, \code{algorithm} must be a named list containing all relevant
+#' parameters that define the algorithm to be applied for solving the problem
+#' instance.
+#'
+#' \code{algorithm} must contain a \code{$name} field (the name of the
+#' function that calls the algorithm) and any other elements/parameters that
+#' \code{algorithm$name} requires (e.g., population size, stop criteria,
+#' operator names and parameters, etc.).
+#'
+#' The function defined by the routine \code{algorithm$name} must have the
+#' following structure: supposing that the list in \code{algorithm} has
+#' fields \code{$name = myalgo} and \code{$par1 = "a", $par2 = 5}, then:
+#'
+#'    \preformatted{
+#'          myalgo <- function(par1, par2, instance, ...){
+#'                # do stuff
+#'                # ...
+#'                return(results)
+#'          }
+#'    }
+#'
+#' That is, it must be able to run if called as:
+#'
+#'    \preformatted{
+#'          # remove '$name' field from list of arguments
+#'          # and include the problem definition as field 'instance'
+#'          myargs          <- algorithm[names(algorithm) != "name"]
+#'          myargs$instance <- instance
+#'
+#'          # call function
+#'          do.call(algorithm$name,
+#'                  args = myargs)
+#'    }
+#'
+#' The \code{algorithm$name} routine must return a list containing (at
+#' least) the function value of the final solution obtained
+#' (\code{result$Fbest)} after a given run.
 #'
 #'
-#' @param problem a list object containing the definitions of the problem
-#'    instance. See \code{\link{run_chase}} for details.
-#' @param algo a list object containing the definitions of the algorithm See
-#'    \code{\link{run_chase}} for details.
+#' @param instance a list object containing the definitions of the problem
+#'    instance. See Section \code{Problems and Algorithms} for details.
+#' @param algo a list object containing the definitions of the algorithm.
+#' See Section \code{Problems and Algorithms} for details.
 #' @param dmax desired confidence interval halfwidth for the estimated mean
 #'    performance of algorithm \code{algo} on instance \code{problem}.
-#' @param method method used to calculate the confidence interval. Currently
-#'      supported methods are "parametric" and "bootstrap"
 #' @param alpha significance level for the confidence intervals.
+#'      Defaults to \code{alpha = 0.05}.
 #' @param nstart initial number of algorithm runs.
-#'      See \code{\link{run_chase}} for details.
+#'      Defaults to \code{nstart = 10}.
 #' @param nmax maximum allowed sample size.
 #'      Defaults to \code{nmax = Inf}.
 #' @param seed seed for the random number generator.
-#'      Defaults to NULL. See \code{\link{run_chase}} for details.
-#' @param nboot number of bootstrap samples.
-#' @param ncpus number of cores to use for bootstrap.
+#'      Defaults to \code{seed = NULL}.
 #'
 #' @return a list object containing the following items:
 #' \itemize{
-#'    \item \code{observations} - vector of observed performance values
+#'    \item \code{x} - vector of observed performance values
 #'    \item \code{xbar} - sample mean of the performance of \code{algo} on \code{problem}
 #'    \item \code{se} - standard error of the mean
+#'    \item \code{delta} - the CI halfwidth
 #'    \item \code{n} - number of observations
 #'    \item \code{seed} - the seed used for the PRNG
 #' }
 #'
-#' @seealso run_chase
-#' @author Felipe Campelo
+#' @author Fernanda Takahashi (fernandact@@ufmg.br), Felipe Campelo (fcampelo@@ufmg.br)
+#'
+#' @section References:
+#' Paul Mathews. "Sample size calculations: Practical methods for engineers and
+#' scientists". Mathews Malnar and Bailey, 2010.
+#' Botella, J., Ximenez, C., Revuelta, J. and Suero, M.,
+#' "Optimization of sample size in controlled experiments: the CLAST rule.",
+#' Behavior Research Methods, 38(1) 65 - 76, 2006
+#'
 #' @export
 
-run_nreps <- function(problem,        # problem parameters
+run_nreps <- function(instance,       # instance parameters
                       algo,           # algorithm parameters
-                      dmax,           # maximum allowed CI halfwidth
-                      method = c("parametric", "bootstrap"), # method for obtaining the CI
+                      dmax,           # desired (maximum) CI halfwidth
                       alpha = 0.05,   # significance level for CI
-                      nstart = 25,    # initial number of samples
+                      nstart = 10,    # initial number of samples
                       nmax = Inf,     # maximum allowed sample size
-                      seed = NULL,    # seed for PRNG
-                      nboot = 1000,   # number of bootstrap samples
-                      ncpus = 1       # number of cores to use for bootstrap
+                      seed = NULL     # seed for PRNG
 ){
 
-    # initial definitions
-    n           <- nstart - 1       # initial number of observations
-    delta       <- Inf              # initial CI halfwidth
+  # ========== Error catching ========== #
+  assertthat::assert_that(
+    is.list(instance) && is.list(algo),
+    all(assertthat::has_name(instance, c("xmax", "xmin", "name"))),
+    assertthat::has_name(algo, "name"),
+    is.numeric(instance$xmin) && is.numeric(instance$xmax),
+    length(instance$xmin) == length(instance$xmax),
+    all(instance$xmin < instance$xmax),
+    is.numeric(alpha) && alpha > 0 && alpha < 1,
+    assertthat::is.count(nstart),
+    is.infinite(nmax) || assertthat::is.count(nmax),
+    nmax > nstart,
+    is.null(seed) || assertthat::is.count(seed))
+  # ==================================== #
 
-    # set PRNG seed
-    if(is.null(seed)) {seed <- as.numeric(Sys.time())}
-    set.seed(seed)
+  # set PRNG seed
+  if(is.null(seed)) {seed <- as.integer(Sys.time())}
+  set.seed(seed)
 
-    # initialize vector of observations
-    x <- get_observations(algo, problem, n)
+  # initial definitions
+  n     <- nstart - 1       # initial number of observations
+  delta <- Inf              # initial CI halfwidth
 
-    # Iterative cycle
-    while(!(delta < dmax | n > nmax)){
-        # Generate a new observation
-        x       <- c(x,
-                     get_observations(algo, problem))
-        n       <- n + 1
+  # initialize vector of observations
+  x <- get_observations(algo, instance, n)
 
-        # Calculate CI halfwidth
-        CI      <- calc_ci(x,
-                           "mean",
-                           alpha,
-                           method,
-                           nboot)
-        delta   <- diff(CI$ci)/2
-    }
+  # Iterative cycle
+  while(delta > dmax && n <= nmax){
+    # Generate a new observation
+    x       <- c(x, get_observations(algo, instance, 1))
+    n       <- n + 1
 
-    output<-list(observations = x,
-                 xbar         = mean(x),
-                 n            = n,
-                 se           = CI$se,
-                 seed         = seed)
+    # Calculate CI halfwidth
+    CI      <- calc_ci(x,
+                       FUN    = "mean",
+                       alpha  = alpha,
+                       method = "parametric")
+    delta   <- diff(CI$ci) / 2
+  }
 
-    return(output)
+  output<-list(x    = x,
+               xbar = mean(x),
+               n    = n,
+               se   = CI$se,
+               delta = delta,
+               seed = seed)
+
+  return(output)
 }

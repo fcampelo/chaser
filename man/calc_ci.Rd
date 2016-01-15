@@ -5,12 +5,12 @@
 \title{Calculates confidence interval for a specified statistic}
 \usage{
 calc_ci(x, FUN = "mean", alpha = 0.05, method = "parametric",
-  nboot = 1000, ncpus = 1)
+  nboot = 1000, ncpus = 4)
 }
 \arguments{
 \item{x}{vector of observations}
 
-\item{FUN}{base statistic for the confidence interval.
+\item{FUN}{name of statistic function
 Defaults to \code{FUN = "mean"}.}
 
 \item{alpha}{desired significance level for the interval.
@@ -23,7 +23,7 @@ Defaults to \code{method = "parametric"}.}
 Defaults to \code{nboot = 1000}.}
 
 \item{ncpus}{number of cores to use for bootstrap
-     (if \code{method} = "bootstrap"). Defaults to \code{ncpus = 1}.}
+     (if \code{method} = "bootstrap"). Defaults to \code{ncpus = 4}.}
 }
 \value{
 a list object containing the following items:
@@ -34,12 +34,15 @@ a list object containing the following items:
 }
 }
 \description{
-Calculates the confidence interval for a statistic based on a given sample.
+Calculates the confidence interval for a statistic, based on a given sample.
 }
 \details{
-The details of this routine come here... (s.e. for median is based on asymptotic formula for normal distro/large smaple size, ref http://www.amazon.com/dp/0716786044/?tag=stackoverfl08-20 pg 139)
+The details of this routine come here...
+(s.e. for median is based on asymptotic formula for normal
+distribution/large sample size, see
+R.R. Sokal, F.J. Rohlf, "Biometry", W.H. Freeman, 4th ed., 2011, p. 139)
 }
 \author{
-Felipe Campelo
+Felipe Campelo (fcampelo@ufmg.br), Fernanda Takahashi (fernandact@ufmg.br)
 }
 

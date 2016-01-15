@@ -4,39 +4,27 @@
 \alias{get_observations}
 \title{Run algorithm on problem}
 \usage{
-get_observations(algo, problem, n = 1)
+get_observations(algo, instance, n = 1)
 }
 \arguments{
 \item{algo}{a list object containing the definitions of the algorithm.
-See \code{\link{run_chase}} for details.}
+See \code{\link{run_nreps}} for details.}
 
-\item{problem}{a list object containing the definitions of the problem
-instance. See \code{\link{run_chase}} for details.}
+\item{instance}{a list object containing the definitions of the problem
+instance. See \code{\link{run_nreps}} for details.}
 
 \item{n}{number of observations to generate.}
 }
 \value{
-a list object containing the following items:
-\itemize{
-   \item \code{xbar} - sample mean of the performance of \code{algo} on \code{problem}
-   \item \code{s} - sample standard deviation of the performance of \code{algo} on \code{problem}
-   \item \code{n} - number of observations
-   \item \code{delta} - half-width of the confidence interval obtained
-   \item \code{ci} - confidence interval
-   \item \code{x} - vector of observed performance values
-   \item \code{alpha} - confidence level of the interval
-}
+vector of observed performance values
 }
 \description{
 Call algorithm routine for the solution of a problem instance
 }
-\details{
-The details of this routine come here...
-}
 \author{
-Felipe Campelo
+Felipe Campelo (fcampelo@ufmg.br)
 }
 \seealso{
-\link{run_chase}
+\link{run_nreps}
 }
 
