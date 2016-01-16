@@ -87,7 +87,7 @@
 #'    \item \code{seed} - the seed used for the PRNG
 #' }
 #'
-#' @author Fernanda Takahashi (fernandact@@ufmg.br), Felipe Campelo (fcampelo@@ufmg.br)
+#' @author Fernanda Takahashi (\email{fernandact@@ufmg.br}), Felipe Campelo (\email{fcampelo@@ufmg.br})
 #'
 #' @section References:
 #' Paul Mathews. "Sample size calculations: Practical methods for engineers and
@@ -108,18 +108,22 @@ run_nreps <- function(instance,       # instance parameters
 ){
 
   # ========== Error catching ========== #
-  assertthat::assert_that(
-    is.list(instance) && is.list(algo),
-    all(assertthat::has_name(instance, c("xmax", "xmin", "name"))),
-    assertthat::has_name(algo, "name"),
-    is.numeric(instance$xmin) && is.numeric(instance$xmax),
-    length(instance$xmin) == length(instance$xmax),
-    all(instance$xmin < instance$xmax),
-    is.numeric(alpha) && alpha > 0 && alpha < 1,
-    assertthat::is.count(nstart),
-    is.infinite(nmax) || assertthat::is.count(nmax),
-    nmax > nstart,
-    is.null(seed) || assertthat::is.count(seed))
+    # If the calling function was run_chase(), then skip the testing
+    # since it has already been done
+    if(!exists("run_chase.errorckeck.performed", envir = parent.frame(1))){
+        assertthat::assert_that(
+            is.list(instance) && is.list(algo),
+            all(assertthat::has_name(instance, c("xmax", "xmin", "name"))),
+            assertthat::has_name(algo, "name"),
+            is.numeric(instance$xmin) && is.numeric(instance$xmax),
+            length(instance$xmin) == length(instance$xmax),
+            all(instance$xmin < instance$xmax),
+            is.numeric(alpha) && alpha > 0 && alpha < 1,
+            assertthat::is.count(nstart),
+            is.infinite(nmax) || assertthat::is.count(nmax),
+            nmax > nstart,
+            is.null(seed) || assertthat::is.count(seed))
+}
   # ==================================== #
 
   # set PRNG seed

@@ -16,7 +16,7 @@
 #' @return a list object with a single field \code{$Fbest}, containing a value
 #' distributed according to \code{distribution.fun} and \code{distribution.pars}.
 #'
-#' @author Felipe Campelo (fcampelo@@ufmg.br)
+#' @author Felipe Campelo (\email{fcampelo@@ufmg.br})
 #'
 dummyalgo <- function(distribution.fun = "rnorm",
                       distribution.pars = list(mean = 0, sd = 1),

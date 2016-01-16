@@ -26,7 +26,7 @@
 #'    \item \code{se} - standard error of the base statistic
 #' }
 #'
-#' @author Felipe Campelo (fcampelo@@ufmg.br), Fernanda Takahashi (fernandact@@ufmg.br)
+#' @author Felipe Campelo (\email{fcampelo@@ufmg.br}), Fernanda Takahashi (\email{fernandact@@ufmg.br})
 
 calc_ci <- function(x,                    # numeric:   vector of observations
                     FUN = "mean",         # character: statistic function
