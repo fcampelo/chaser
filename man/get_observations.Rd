@@ -22,7 +22,7 @@ vector of observed performance values
 Call algorithm routine for the solution of a problem instance
 }
 \author{
-Felipe Campelo (fcampelo@ufmg.br)
+Felipe Campelo (\email{fcampelo@ufmg.br})
 }
 \seealso{
 \link{run_nreps}

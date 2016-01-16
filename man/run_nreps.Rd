@@ -113,6 +113,6 @@ Botella, J., Ximenez, C., Revuelta, J. and Suero, M.,
 Behavior Research Methods, 38(1) 65 - 76, 2006
 }
 \author{
-Fernanda Takahashi (fernandact@ufmg.br), Felipe Campelo (fcampelo@ufmg.br)
+Fernanda Takahashi (\email{fernandact@ufmg.br}), Felipe Campelo (\email{fcampelo@ufmg.br})
 }
 

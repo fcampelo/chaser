@@ -29,6 +29,6 @@ basically returns values according to the distribution function given
 in \code{distribution.fun} with parameters given by \code{distribution.pars}.
 }
 \author{
-Felipe Campelo (fcampelo@ufmg.br)
+Felipe Campelo (\email{fcampelo@ufmg.br})
 }
 

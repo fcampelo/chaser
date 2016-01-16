@@ -12,7 +12,7 @@
 #' @return vector of observed performance values
 #'
 #' @seealso \link{run_nreps}
-#' @author Felipe Campelo (fcampelo@@ufmg.br)
+#' @author Felipe Campelo (\email{fcampelo@@ufmg.br})
 #'
 
 get_observations <- function(algo,        # algorithm parameters

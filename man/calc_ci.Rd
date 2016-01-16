@@ -43,6 +43,6 @@ distribution/large sample size, see
 R.R. Sokal, F.J. Rohlf, "Biometry", W.H. Freeman, 4th ed., 2011, p. 139)
 }
 \author{
-Felipe Campelo (fcampelo@ufmg.br), Fernanda Takahashi (fernandact@ufmg.br)
+Felipe Campelo (\email{fcampelo@ufmg.br}), Fernanda Takahashi (\email{fernandact@ufmg.br})
 }
 
