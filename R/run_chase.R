@@ -127,9 +127,13 @@ run_chase <- function(instances,    # list of instances
 
     # Initialize data.raw dataframe with its smallest possible size,
     # i.e., nprobs * nalgos * nstart
-    data.raw <- list(Algorithm   = character(nprobs * nalgos * nstart),
-                     Instance    = character(nprobs * nalgos * nstart),
-                     Observation = numeric(nprobs * nalgos * nstart))
+    algonames <- unlist(lapply(algorithms, function(x) x$name))
+    probnames <- unlist(lapply(instances, function(x) x$name))
+    data.raw <- data.frame(Algorithm   = factor(x = character(nprobs * nalgos * nstart),
+                                                levels = unique(algonames)),
+                           Instance    = factor(x = character(nprobs * nalgos * nstart),
+                                                levels = unique(probnames)),
+                           Observation = numeric(nprobs * nalgos * nstart))
 
     # Keep an "empty" copy of data.raw in case we need to grow it in the
     # iterative cycle (which is almost guaranteed)
@@ -137,12 +141,13 @@ run_chase <- function(instances,    # list of instances
 
     # Initialize data.summary dataframe with its exact size
     nrows.summary <- nprobs * nalgos
-    data.summary <- data.frame(Algorithm = character(nrows.summary),
-                               Instance  = character(nrows.summary),
+    data.summary <- data.frame(Algorithm   = factor(x = character(nrows.summary),
+                                                    levels = unique(algonames)),
+                               Instance    = factor(x = character(nrows.summary),
+                                                    levels = unique(probnames)),
                                x.mean    = numeric(nrows.summary),
                                x.se      = numeric(nrows.summary),
-                               x.n       = numeric(nrows.summary)
-    )
+                               x.n       = numeric(nrows.summary))
 
     # Iterative cycle
     rawcount <- 0
