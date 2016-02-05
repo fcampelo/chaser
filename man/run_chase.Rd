@@ -4,7 +4,7 @@
 \alias{run_chase}
 \title{Comparison of Heuristics with Adaptive Sample size Estimation}
 \usage{
-run_chase(instances, algorithms, dmax, alpha = 0.05, nstart = 10,
+run_chase(instances, algorithms, dmax, alpha = 0.05, nstart = 20,
   nmax = Inf, seed = NULL)
 }
 \arguments{
@@ -20,16 +20,14 @@ See \code{Instances and Algorithms} for details.}
 performance of each algorithm on each instance.}
 
 \item{alpha}{significance level for the confidence intervals on the means of
-each algo-problem pair. Defaults to \code{alpha = 0.05}.}
+each algo-problem pair.}
 
 \item{nstart}{initial number of algorithm runs.
-Defaults to \code{nstart = 15}.
 See \code{Initial Number of Observations} for details.}
 
-\item{nmax}{maximum allowed sample size. Defaults to \code{nmax = Inf}.}
+\item{nmax}{maximum allowed sample size.}
 
 \item{seed}{seed for the random number generator.
-     Defaults to NULL.
      See \code{Random seed} for details.}
 }
 \value{
@@ -62,7 +60,7 @@ experiment with metaheuristics (or other algorithms).
 }
 \section{Instances and Algorithms}{
 
-Parameters \code{instances} and \code{algorithms} must lists of
+Parameters \code{instances} and \code{algorithms} must be lists of
 \code{instance} (\code{algorithm}) specifications, each defined according to
 the following instructions:
 
@@ -78,7 +76,7 @@ as defined in the documentation of function \code{\link{run_nreps}}
 
 \section{Random Seed}{
 
-The \code{seed} argument receives the desired seed for the PRNG. This value
+The \code{seed} argument receives the desired seed for the PRNG, which
 can be set for reproducibility purposes. The value of this parameter defaults
 to NULL, in which case the seed is arbitrarily set using
 \code{as.numeric(Sys.time())}. The value used as seed is always reported in
@@ -90,13 +88,13 @@ current version.
 
 \section{Initial Number of Observations}{
 
-In the general case the initial number of observations
-(\code{nstart}) should be relatively high (> 15 if outliers are not
-expected, > 50 if that assumption can't be made) to guarantee good
+In the general case the initial number of observations / algorithm / instance
+(\code{nstart}) should be relatively high (> 20 if outliers are not
+expected, > 50 (at least) if that assumption can't be made) to guarantee good
 statistical properties (particularly compliance with nominal type-I error
 rate \code{alpha}). However, if some distributional assumptions can be
-made (e.g., low skewness of the population of algorithm results on the test
-instances), then \code{nstart} can in principle be as small as 5.
+made - particularly low skewness of the population of algorithm results on
+the test instances), then \code{nstart} can in principle be as small as 5.
 
 In general, higher sample sizes are the price to pay for abandoning
 distributional assumptions. Use lower values of \code{nstart} with caution.
