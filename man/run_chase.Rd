@@ -4,8 +4,9 @@
 \alias{run_chase}
 \title{Comparison of Heuristics with Adaptive Sample size Estimation}
 \usage{
-run_chase(instances, algorithms, dmax, alpha = 0.05, nstart = 20,
-  nmax = Inf, seed = NULL)
+run_chase(instances, algorithms, dmax, stat = c("mean", "median"),
+  method = c("param", "boot"), alpha = 0.05, nstart = 20, nmax = Inf,
+  seed = NULL, ...)
 }
 \arguments{
 \item{instances}{a list object containing lists defining all problem
@@ -19,6 +20,10 @@ See \code{Instances and Algorithms} for details.}
 \item{dmax}{desired confidence interval halfwidth for the estimated mean
 performance of each algorithm on each instance.}
 
+\item{stat}{statistic to use in the estimation.}
+
+\item{method}{method used to calculate the interval.}
+
 \item{alpha}{significance level for the confidence intervals on the means of
 each algo-problem pair.}
 
@@ -28,7 +33,10 @@ See \code{Initial Number of Observations} for details.}
 \item{nmax}{maximum allowed sample size.}
 
 \item{seed}{seed for the random number generator.
-     See \code{Random seed} for details.}
+See \code{Random seed} for details.}
+
+\item{...}{further parameters to be passed on to \code{boot}
+         (if method == "boot")}
 }
 \value{
 a list object containing the following items:
@@ -44,15 +52,15 @@ Run experiment using adaptive sample size estimation.
 \details{
 This routine executes a full experiment using the CHASE method. It
 essentially runs each algorithm (i) on each problem instance (j) until the
-uncertainty of the estimate of the mean performance is below a given
+uncertainty of the estimate of the mean / median performance is below a given
 threshold.
 
 The result is an unbalanced experiment, in which the within-instance sample
 size is proportional to the variance of the algorithm on that instance, so
-that it yields an estimate of mean performance with fixed "measurement
-error".
+that it yields an estimate of mean / median performance with fixed
+"measurement error".
 
-Based on this "measurement error" (which is defined in advance) it is
+Based on this measurement error (which is defined in advance) it is
 possible to use standard formulas to calculate the effective sample size
 (i.e., the number of problem instances required to achieve a certain
 statistical power for a desired effect size) for a given comparative
@@ -99,7 +107,21 @@ the test instances), then \code{nstart} can in principle be as small as 5.
 In general, higher sample sizes are the price to pay for abandoning
 distributional assumptions. Use lower values of \code{nstart} with caution.
 }
+\examples{
+instance <- list(
+list(name = "rnorm sd=1",     xmin = 0, xmax = 1),
+list(name = "rnorm sd=4",     xmin = 0, xmax = 1),
+list(name = "rnorm sd=16",    xmin = 0, xmax = 1),
+list(name = "rexp rate=0.25", xmin = 0, xmax = 1),
+list(name = "rexp rate=0.5",  xmin = 0, xmax = 1),
+list(name = "rexp rate=1",    xmin = 0, xmax = 1))
+
+algo <- list(myalgo = list(name = "distribution.test"))
+out  <- run_chase(instances = instance, algorithms = algo, dmax = 1,
+                  stat = "mean", method = "boot")
+}
 \author{
-Felipe Campelo (\email{fcampelo@ufmg.br}), Fernanda Takahashi (\email{fernandact@ufmg.br})
+Felipe Campelo (\email{fcampelo@ufmg.br}),
+        Fernanda Takahashi (\email{fernandact@ufmg.br})
 }
 

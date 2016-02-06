@@ -4,8 +4,9 @@
 \alias{run_nreps}
 \title{Automatically determine sample size for an algorithm on a problem instance}
 \usage{
-run_nreps(instance, algo, dmax, alpha = 0.05, nstart = 10, nmax = Inf,
-  seed = NULL)
+run_nreps(instance, algo, dmax, stat = c("mean", "median"),
+  method = c("param", "boot"), alpha = 0.05, nstart = 20, nmax = Inf,
+  seed = NULL, ...)
 }
 \arguments{
 \item{instance}{a list object containing the definitions of the problem
@@ -14,36 +15,42 @@ instance. See Section \code{Problems and Algorithms} for details.}
 \item{algo}{a list object containing the definitions of the algorithm.
 See Section \code{Problems and Algorithms} for details.}
 
-\item{dmax}{desired confidence interval halfwidth for the estimated mean
-performance of algorithm \code{algo} on instance \code{problem}.}
+\item{dmax}{desired confidence interval halfwidth for the estimated
+mean/median performance of algorithm \code{algo} on instance
+\code{problem}.}
 
-\item{alpha}{significance level for the confidence intervals.
-Defaults to \code{alpha = 0.05}.}
+\item{stat}{statistic to use in the estimation.}
 
-\item{nstart}{initial number of algorithm runs.
-Defaults to \code{nstart = 10}.}
+\item{method}{method used to calculate the interval.}
 
-\item{nmax}{maximum allowed sample size.
-Defaults to \code{nmax = Inf}.}
+\item{alpha}{significance level for the confidence intervals.}
 
-\item{seed}{seed for the random number generator.
-     Defaults to \code{seed = NULL}.}
+\item{nstart}{initial number of algorithm runs.}
+
+\item{nmax}{maximum allowed sample size.}
+
+\item{seed}{seed for the random number generator
+(\code{NULL} for using \code{Sys.time()}).}
+
+\item{...}{further parameters to be passed on to \code{boot}
+         (if method == "boot")}
 }
 \value{
 a list object containing the following items:
 \itemize{
    \item \code{x} - vector of observed performance values
-   \item \code{xbar} - sample mean of the performance of \code{algo} on \code{problem}
-   \item \code{se} - standard error of the mean
+   \item \code{x.est} - estimated value for the statistic of interest of the
+         performance of \code{algo} on \code{problem}
+   \item \code{se} - standard error of the estimate
    \item \code{delta} - the CI halfwidth
-   \item \code{n} - number of observations
+   \item \code{n} - number of observations generated
    \item \code{seed} - the seed used for the PRNG
 }
 }
 \description{
 Iteratively calculates the required sample size for an algorithm on a
    problem instance, so that the final number of replicates yields an
-   estimation of mean performance with a predefined maximum uncertainty.
+   estimation of expected performance with a predefined maximum uncertainty.
 }
 \section{Instances and Algorithms}{
 
@@ -106,13 +113,23 @@ least) the function value of the final solution obtained
 
 \section{References}{
 
-Paul Mathews. "Sample size calculations: Practical methods for engineers and
-scientists". Mathews Malnar and Bailey, 2010.
-Botella, J., Ximenez, C., Revuelta, J. and Suero, M.,
-"Optimization of sample size in controlled experiments: the CLAST rule.",
+P. Mathews.
+"Sample size calculations: Practical methods for engineers and scientists".
+Mathews Malnar and Bailey, 2010.
+J. Botella, C. Ximenez, J. Revuelta, M. Suero.
+"Optimization of sample size in controlled experiments: the CLAST rule".
 Behavior Research Methods, 38(1) 65 - 76, 2006
 }
+\examples{
+instance <- list(name = "dummyinstance", xmax = 1, xmin = 0)
+algo     <- list(name              = "dummyalgo",
+                 distribution.fun  = "rexp",
+                 distribution.pars = list(rate = 0.5))
+out      <- run_nreps(instance, algo, dmax = 1,
+                      stat = "mean", method = "boot")
+}
 \author{
-Fernanda Takahashi (\email{fernandact@ufmg.br}), Felipe Campelo (\email{fcampelo@ufmg.br})
+Felipe Campelo (\email{fcampelo@ufmg.br}),
+        Fernanda Takahashi (\email{fernandact@ufmg.br})
 }
 

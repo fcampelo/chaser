@@ -4,45 +4,66 @@
 \alias{calc_ci}
 \title{Calculates confidence interval for a specified statistic}
 \usage{
-calc_ci(x, FUN = "mean", alpha = 0.05, method = "parametric",
-  nboot = 1000, ncpus = 4)
+calc_ci(x, stat = "mean", method = "param", alpha = 0.05, ...)
 }
 \arguments{
 \item{x}{vector of observations}
 
-\item{FUN}{name of statistic function
-Defaults to \code{FUN = "mean"}.}
+\item{stat}{name of statistic function to calculate CI for.}
 
-\item{alpha}{desired significance level for the interval.
-Defaults to \code{alpha = 0.05}.}
+\item{method}{method used to calculate the interval. Accepts "param" (the
+default) or "boot" (for bootstrap)}
 
-\item{method}{method used to calculate the interval.
-Defaults to \code{method = "parametric"}.}
+\item{alpha}{desired significance level for the interval.}
 
-\item{nboot}{number of bootstrap resamples (if \code{method} = "bootstrap").
-Defaults to \code{nboot = 1000}.}
-
-\item{ncpus}{number of cores to use for bootstrap
-     (if \code{method} = "bootstrap"). Defaults to \code{ncpus = 4}.}
+\item{...}{further parameters to be passed on to \code{boot}
+         (if method == "boot")}
 }
 \value{
 a list object containing the following items:
 \itemize{
+   \item \code{x.est} - estimated value
    \item \code{ci} - numeric vector of length 2 containing the confidence
      interval
-   \item \code{se} - standard error of the base statistic
+   \item \code{se} - standard error
 }
 }
 \description{
-Calculates the confidence interval for a statistic, based on a given sample.
+Calculates the confidence interval for a population parameter, based on a
+given sample.
 }
 \details{
-The details of this routine come here...
-(s.e. for median is based on asymptotic formula for normal
-distribution/large sample size, see
-R.R. Sokal, F.J. Rohlf, "Biometry", W.H. Freeman, 4th ed., 2011, p. 139)
+This routine is used to calculate confidence intervals on the mean or median,
+based either in the parametric formulas or in bootstrap resampling.
+
+#'
+}
+\section{References}{
+
+R.R. Sokal, F.J. Rohlf.
+"Biometry".
+W.H. Freeman, 4th ed., 2011, p. 139
+
+D.C. Montgomery, G.C. Runger.
+"Applied Statistics and Probability for Engineers"
+Wiley, 6th ed., 2013
+
+A.C. Davison, D.V. Hinkley.
+"Bootstrap Methods and Their Application".
+Cambridge University Press, 1st ed., 1997
+}
+\examples{
+x <- rnorm(n = 30, mean = 5, sd = 3)
+calc_ci(x) # parametric 95\% CI on the mean
+calc_ci(x, stat = "median", alpha = .01) # parametric 99\% CI on the median
+
+x <- rexp(n = 25, rate = 0.5)
+# bootstrap 95\% CI on the mean
+calc_ci(x, method = "boot",
+        R = 1000, parallel = "multicore", ncpus = 4)
 }
 \author{
-Felipe Campelo (\email{fcampelo@ufmg.br}), Fernanda Takahashi (\email{fernandact@ufmg.br})
+Felipe Campelo (\email{fcampelo@ufmg.br}),
+        Fernanda Takahashi (\email{fernandact@ufmg.br})
 }
 

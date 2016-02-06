@@ -6,5 +6,5 @@ output: html_document
 ---
 
 - Test run_chase()
-- Finish debugging version 0
+- Finish debugging version 0, particularly: stat = "median" and method = "boot")
 - Paralelize evaluations

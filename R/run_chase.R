@@ -4,15 +4,15 @@
 #'
 #' This routine executes a full experiment using the CHASE method. It
 #' essentially runs each algorithm (i) on each problem instance (j) until the
-#' uncertainty of the estimate of the mean performance is below a given
+#' uncertainty of the estimate of the mean / median performance is below a given
 #' threshold.
 #'
 #' The result is an unbalanced experiment, in which the within-instance sample
 #' size is proportional to the variance of the algorithm on that instance, so
-#' that it yields an estimate of mean performance with fixed "measurement
-#' error".
+#' that it yields an estimate of mean / median performance with fixed
+#' "measurement error".
 #'
-#' Based on this "measurement error" (which is defined in advance) it is
+#' Based on this measurement error (which is defined in advance) it is
 #' possible to use standard formulas to calculate the effective sample size
 #' (i.e., the number of problem instances required to achieve a certain
 #' statistical power for a desired effect size) for a given comparative
@@ -62,6 +62,8 @@
 #'    See \code{Instances and Algorithms} for details.
 #' @param dmax desired confidence interval halfwidth for the estimated mean
 #'    performance of each algorithm on each instance.
+#' @param stat statistic to use in the estimation.
+#' @param method method used to calculate the interval.
 #' @param alpha significance level for the confidence intervals on the means of
 #'    each algo-problem pair.
 #' @param nstart initial number of algorithm runs.
@@ -69,6 +71,8 @@
 #' @param nmax maximum allowed sample size.
 #' @param seed seed for the random number generator.
 #'      See \code{Random seed} for details.
+#' @param ... further parameters to be passed on to \code{boot}
+#'          (if method == "boot")
 #'
 #' @return a list object containing the following items:
 #' \itemize{
@@ -77,24 +81,39 @@
 #'    errors and sample sizes of each algorithm on each problem instance.
 #' }
 #'
-#' @author Felipe Campelo (\email{fcampelo@@ufmg.br}), Fernanda Takahashi (\email{fernandact@@ufmg.br})
+#' @author Felipe Campelo (\email{fcampelo@@ufmg.br}),
+#'         Fernanda Takahashi (\email{fernandact@@ufmg.br})
 #'
+#' @examples
+#' instances <- list(
+#' list(name = "rnorm sd=1",     xmin = 0, xmax = 1),
+#' list(name = "rnorm sd=4",     xmin = 0, xmax = 1),
+#' list(name = "rnorm sd=16",    xmin = 0, xmax = 1),
+#' list(name = "rexp rate=0.25", xmin = 0, xmax = 1),
+#' list(name = "rexp rate=0.5",  xmin = 0, xmax = 1),
+#' list(name = "rexp rate=1",    xmin = 0, xmax = 1))
+#'
+#' algorithms <- list(myalgo = list(name = "distribution.test"))
+#' out <- run_chase(instances, algorithms, dmax = 1, stat = "median", method = "param")
+
 #' @export
 
-run_chase <- function(instances,    # list of instances
-                      algorithms,   # list fo algorithms
-                      dmax,         # desired (maximum) CI halfwidth
-                      alpha = 0.05, # significance level for CI
-                      nstart = 20,  # initial number of samples
-                      nmax = Inf,   # maximum allowed sample size
-                      seed = NULL   # seed for PRNG
-)
+run_chase <- function(instances,                   # list of instances
+                      algorithms,                  # list fo algorithms
+                      dmax,                        # desired (max) CI halfwidth
+                      stat   = c("mean", "median"),# statistic to use
+                      method = c("param", "boot"), # technique to calculate CI
+                      alpha  = 0.05,               # significance level for CI
+                      nstart = 20,                 # initial number of samples
+                      nmax   = Inf,                # maximum allowed sample size
+                      seed   = NULL,               # seed for PRNG
+                      ...)                         # parameters for boot
 {
 
     # ========== Error catching ========== #
     assertthat::assert_that(
-        is.list(instances) && is.list(algorithms),
-        is.numeric(alpha) && alpha > 0 && alpha < 1,
+        is.list(instances), is.list(algorithms),
+        is.numeric(alpha), alpha > 0, alpha < 1,
         assertthat::is.count(nstart),
         is.infinite(nmax) || assertthat::is.count(nmax),
         nmax > nstart,
@@ -107,7 +126,7 @@ run_chase <- function(instances,    # list of instances
     for (i in 1:nprobs){
         assertthat::assert_that(
             all(assertthat::has_name(instances[[i]], c("xmax", "xmin", "name"))),
-            is.numeric(instances[[i]]$xmin) && is.numeric(instances[[i]]$xmax),
+            is.numeric(instances[[i]]$xmin), is.numeric(instances[[i]]$xmax),
             length(instances[[i]]$xmin) == length(instances[[i]]$xmax),
             all(instances[[i]]$xmin < instances[[i]]$xmax))
     }
@@ -126,12 +145,12 @@ run_chase <- function(instances,    # list of instances
     # Initialize data.raw dataframe with its smallest possible size,
     # i.e., nprobs * nalgos * nstart
     algonames <- unlist(lapply(algorithms, function(x) x$name))
-    probnames <- unlist(lapply(instances, function(x) x$name))
-    data.raw <- data.frame(Algorithm   = factor(x = character(nprobs * nalgos * nstart),
-                                                levels = unique(algonames)),
-                           Instance    = factor(x = character(nprobs * nalgos * nstart),
-                                                levels = unique(probnames)),
-                           Observation = numeric(nprobs * nalgos * nstart))
+    probnames <- unlist(lapply(instances,  function(x) x$name))
+    data.raw  <- data.frame(Algorithm   = factor(x      = character(nprobs * nalgos * nstart),
+                                                 levels = unique(algonames)),
+                            Instance    = factor(x      = character(nprobs * nalgos * nstart),
+                                                 levels = unique(probnames)),
+                            Observation = numeric(nprobs * nalgos * nstart))
 
     # Keep an "empty" copy of data.raw in case we need to grow it in the
     # iterative cycle (which is almost guaranteed)
@@ -139,13 +158,15 @@ run_chase <- function(instances,    # list of instances
 
     # Initialize data.summary dataframe with its exact size
     nrows.summary <- nprobs * nalgos
-    data.summary <- data.frame(Algorithm   = factor(x = character(nrows.summary),
-                                                    levels = unique(algonames)),
-                               Instance    = factor(x = character(nrows.summary),
-                                                    levels = unique(probnames)),
-                               x.mean    = numeric(nrows.summary),
-                               x.se      = numeric(nrows.summary),
-                               x.n       = numeric(nrows.summary))
+    data.summary  <- data.frame(Algorithm = factor(x      = character(nrows.summary),
+                                                   levels = unique(algonames)),
+                                Instance  = factor(x      = character(nrows.summary),
+                                                   levels = unique(probnames)),
+                                x.est     = numeric(nrows.summary),
+                                x.se      = numeric(nrows.summary),
+                                x.CIl     = numeric(nrows.summary),
+                                x.CIu     = numeric(nrows.summary),
+                                x.n       = numeric(nrows.summary))
 
     # Iterative cycle
     rawcount <- 0
@@ -156,10 +177,13 @@ run_chase <- function(instances,    # list of instances
             data.ij <- run_nreps(instance = instances[[j]],
                                  algo     = algorithms[[i]],
                                  dmax     = dmax,
+                                 stat     = stat,
+                                 method   = method,
                                  alpha    = alpha,
                                  nstart   = nstart,
                                  nmax     = nmax,
-                                 seed     = seed)
+                                 seed     = seed)#,
+                                 #...)
 
             # If needed, grow the data.raw dataframe
             nij <- data.ij$n
@@ -179,8 +203,10 @@ run_chase <- function(instances,    # list of instances
             data.summary[sumcount, ] <- data.frame(
                 Algorithm = algorithms[[i]]$name,
                 Instance  = instances[[j]]$name,
-                x.mean    = data.ij$xbar,
+                x.est     = data.ij$x.est,
                 x.se      = data.ij$se,
+                x.CIl     = data.ij$x.CI[1],
+                x.CIu     = data.ij$x.CI[2],
                 x.n       = nij)
         }
     }
@@ -193,6 +219,8 @@ run_chase <- function(instances,    # list of instances
                  instances    = instances,
                  algorithms   = algorithms,
                  dmax         = dmax,
+                 stat         = stat,
+                 method       = method,
                  alpha        = alpha,
                  nstart       = nstart,
                  nmax         = nmax,

@@ -2,7 +2,7 @@
 #'
 #' Iteratively calculates the required sample size for an algorithm on a
 #'    problem instance, so that the final number of replicates yields an
-#'    estimation of mean performance with a predefined maximum uncertainty.
+#'    estimation of expected performance with a predefined maximum uncertainty.
 #'
 #' @section Instances and Algorithms:
 #' Parameters \code{instance} and \code{algorithm} must each be a list of
@@ -66,59 +66,74 @@
 #'    instance. See Section \code{Problems and Algorithms} for details.
 #' @param algo a list object containing the definitions of the algorithm.
 #' See Section \code{Problems and Algorithms} for details.
-#' @param dmax desired confidence interval halfwidth for the estimated mean
-#'    performance of algorithm \code{algo} on instance \code{problem}.
+#' @param dmax desired confidence interval halfwidth for the estimated
+#'          mean/median performance of algorithm \code{algo} on instance
+#'          \code{problem}.
+#' @param stat statistic to use in the estimation.
+#' @param method method used to calculate the interval.
 #' @param alpha significance level for the confidence intervals.
-#'      Defaults to \code{alpha = 0.05}.
 #' @param nstart initial number of algorithm runs.
-#'      Defaults to \code{nstart = 10}.
 #' @param nmax maximum allowed sample size.
-#'      Defaults to \code{nmax = Inf}.
-#' @param seed seed for the random number generator.
-#'      Defaults to \code{seed = NULL}.
+#' @param seed seed for the random number generator
+#'          (\code{NULL} for using \code{Sys.time()}).
+#' @param ... further parameters to be passed on to \code{boot}
+#'          (if method == "boot")
 #'
 #' @return a list object containing the following items:
 #' \itemize{
 #'    \item \code{x} - vector of observed performance values
-#'    \item \code{xbar} - sample mean of the performance of \code{algo} on \code{problem}
-#'    \item \code{se} - standard error of the mean
+#'    \item \code{x.est} - estimated value for the statistic of interest of the
+#'          performance of \code{algo} on \code{problem}
+#'    \item \code{se} - standard error of the estimate
 #'    \item \code{delta} - the CI halfwidth
-#'    \item \code{n} - number of observations
+#'    \item \code{n} - number of observations generated
 #'    \item \code{seed} - the seed used for the PRNG
 #' }
 #'
-#' @author Fernanda Takahashi (\email{fernandact@@ufmg.br}), Felipe Campelo (\email{fcampelo@@ufmg.br})
+#' @author Felipe Campelo (\email{fcampelo@@ufmg.br}),
+#'         Fernanda Takahashi (\email{fernandact@@ufmg.br})
 #'
 #' @section References:
-#' Paul Mathews. "Sample size calculations: Practical methods for engineers and
-#' scientists". Mathews Malnar and Bailey, 2010.
-#' Botella, J., Ximenez, C., Revuelta, J. and Suero, M.,
-#' "Optimization of sample size in controlled experiments: the CLAST rule.",
+#' P. Mathews.
+#' "Sample size calculations: Practical methods for engineers and scientists".
+#' Mathews Malnar and Bailey, 2010.
+#' J. Botella, C. Ximenez, J. Revuelta, M. Suero.
+#' "Optimization of sample size in controlled experiments: the CLAST rule".
 #' Behavior Research Methods, 38(1) 65 - 76, 2006
 #'
+#' @examples
+#' instance <- list(name = "dummyinstance", xmax = 1, xmin = 0)
+#' algo     <- list(name              = "dummyalgo",
+#'                  distribution.fun  = "rexp",
+#'                  distribution.pars = list(rate = 0.5))
+#' out      <- run_nreps(instance, algo, dmax = 1,
+#'                       stat = "mean", method = "boot")
 #' @export
 
-run_nreps <- function(instance,       # instance parameters
-                      algo,           # algorithm parameters
-                      dmax,           # desired (maximum) CI halfwidth
-                      alpha = 0.05,   # significance level for CI
-                      nstart = 10,    # initial number of samples
-                      nmax = Inf,     # maximum allowed sample size
-                      seed = NULL     # seed for PRNG
-){
+run_nreps <- function(instance,                    # instance parameters
+                      algo,                        # algorithm parameters
+                      dmax,                        # desired (max) CI halfwidth
+                      stat   = c("mean", "median"),# statistic to use
+                      method = c("param", "boot"), # technique to calculate CI
+                      alpha  = 0.05,               # significance level for CI
+                      nstart = 20,                 # initial number of samples
+                      nmax   = Inf,                # maximum allowed sample size
+                      seed   = NULL,               # seed for PRNG
+                      ...)                         # parameters for boot
+{
 
   # ========== Error catching ========== #
     # If the calling function was run_chase(), then skip the testing
     # since it has already been done
     if(!exists("run_chase.errorckeck.performed", envir = parent.frame(1))){
         assertthat::assert_that(
-            is.list(instance) && is.list(algo),
+            is.list(instance), is.list(algo),
             all(assertthat::has_name(instance, c("xmax", "xmin", "name"))),
             assertthat::has_name(algo, "name"),
-            is.numeric(instance$xmin) && is.numeric(instance$xmax),
+            is.numeric(instance$xmin), is.numeric(instance$xmax),
             length(instance$xmin) == length(instance$xmax),
             all(instance$xmin < instance$xmax),
-            is.numeric(alpha) && alpha > 0 && alpha < 1,
+            is.numeric(alpha), alpha > 0, alpha < 1,
             assertthat::is.count(nstart),
             is.infinite(nmax) || assertthat::is.count(nmax),
             nmax > nstart,
@@ -145,18 +160,22 @@ run_nreps <- function(instance,       # instance parameters
 
     # Calculate CI halfwidth
     CI      <- calc_ci(x,
-                       FUN    = "mean",
+                       stat   = stat,
+                       method = method,
                        alpha  = alpha,
-                       method = "parametric")
+                       ...)
     delta   <- diff(CI$ci) / 2
   }
 
-  output<-list(x    = x,
-               xbar = mean(x),
-               n    = n,
-               se   = CI$se,
-               delta = delta,
-               seed = seed)
+  output<-list(x      = x,
+               x.est  = CI$est,
+               x.CI   = CI$ci,
+               n      = n,
+               se     = CI$se,
+               delta  = delta,
+               seed   = seed,
+               stat   = stat,
+               method = method)
 
   return(output)
 }
