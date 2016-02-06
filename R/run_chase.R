@@ -19,7 +19,7 @@
 #' experiment with metaheuristics (or other algorithms).
 #'
 #' @section Instances and Algorithms:
-#' Parameters \code{instances} and \code{algorithms} must lists of
+#' Parameters \code{instances} and \code{algorithms} must be lists of
 #' \code{instance} (\code{algorithm}) specifications, each defined according to
 #' the following instructions:
 #'
@@ -33,7 +33,7 @@
 #' as defined in the documentation of function \code{\link{run_nreps}}
 #'
 #' @section Random Seed:
-#' The \code{seed} argument receives the desired seed for the PRNG. This value
+#' The \code{seed} argument receives the desired seed for the PRNG, which
 #' can be set for reproducibility purposes. The value of this parameter defaults
 #' to NULL, in which case the seed is arbitrarily set using
 #' \code{as.numeric(Sys.time())}. The value used as seed is always reported in
@@ -43,13 +43,13 @@
 #' current version.
 #'
 #' @section Initial Number of Observations:
-#' In the general case the initial number of observations
-#' (\code{nstart}) should be relatively high (> 15 if outliers are not
-#' expected, > 50 if that assumption can't be made) to guarantee good
+#' In the general case the initial number of observations / algorithm / instance
+#' (\code{nstart}) should be relatively high (> 20 if outliers are not
+#' expected, > 50 (at least) if that assumption can't be made) to guarantee good
 #' statistical properties (particularly compliance with nominal type-I error
 #' rate \code{alpha}). However, if some distributional assumptions can be
-#' made (e.g., low skewness of the population of algorithm results on the test
-#' instances), then \code{nstart} can in principle be as small as 5.
+#' made - particularly low skewness of the population of algorithm results on
+#' the test instances), then \code{nstart} can in principle be as small as 5.
 #'
 #' In general, higher sample sizes are the price to pay for abandoning
 #' distributional assumptions. Use lower values of \code{nstart} with caution.
@@ -63,13 +63,11 @@
 #' @param dmax desired confidence interval halfwidth for the estimated mean
 #'    performance of each algorithm on each instance.
 #' @param alpha significance level for the confidence intervals on the means of
-#'    each algo-problem pair. Defaults to \code{alpha = 0.05}.
+#'    each algo-problem pair.
 #' @param nstart initial number of algorithm runs.
-#'      Defaults to \code{nstart = 15}.
 #'      See \code{Initial Number of Observations} for details.
-#' @param nmax maximum allowed sample size. Defaults to \code{nmax = Inf}.
+#' @param nmax maximum allowed sample size.
 #' @param seed seed for the random number generator.
-#'      Defaults to NULL.
 #'      See \code{Random seed} for details.
 #'
 #' @return a list object containing the following items:
@@ -87,7 +85,7 @@ run_chase <- function(instances,    # list of instances
                       algorithms,   # list fo algorithms
                       dmax,         # desired (maximum) CI halfwidth
                       alpha = 0.05, # significance level for CI
-                      nstart = 10,  # initial number of samples
+                      nstart = 20,  # initial number of samples
                       nmax = Inf,   # maximum allowed sample size
                       seed = NULL   # seed for PRNG
 )
@@ -127,9 +125,13 @@ run_chase <- function(instances,    # list of instances
 
     # Initialize data.raw dataframe with its smallest possible size,
     # i.e., nprobs * nalgos * nstart
-    data.raw <- list(Algorithm   = character(nprobs * nalgos * nstart),
-                     Instance    = character(nprobs * nalgos * nstart),
-                     Observation = numeric(nprobs * nalgos * nstart))
+    algonames <- unlist(lapply(algorithms, function(x) x$name))
+    probnames <- unlist(lapply(instances, function(x) x$name))
+    data.raw <- data.frame(Algorithm   = factor(x = character(nprobs * nalgos * nstart),
+                                                levels = unique(algonames)),
+                           Instance    = factor(x = character(nprobs * nalgos * nstart),
+                                                levels = unique(probnames)),
+                           Observation = numeric(nprobs * nalgos * nstart))
 
     # Keep an "empty" copy of data.raw in case we need to grow it in the
     # iterative cycle (which is almost guaranteed)
@@ -137,12 +139,13 @@ run_chase <- function(instances,    # list of instances
 
     # Initialize data.summary dataframe with its exact size
     nrows.summary <- nprobs * nalgos
-    data.summary <- data.frame(Algorithm = character(nrows.summary),
-                               Instance  = character(nrows.summary),
+    data.summary <- data.frame(Algorithm   = factor(x = character(nrows.summary),
+                                                    levels = unique(algonames)),
+                               Instance    = factor(x = character(nrows.summary),
+                                                    levels = unique(probnames)),
                                x.mean    = numeric(nrows.summary),
                                x.se      = numeric(nrows.summary),
-                               x.n       = numeric(nrows.summary)
-    )
+                               x.n       = numeric(nrows.summary))
 
     # Iterative cycle
     rawcount <- 0

@@ -37,8 +37,8 @@ envelope <- function(Alg, Prob, e, n0, a){
   for (i in 1:N){
     for (j in 1:K){
       #values <- sampling(Alg(i), Prob(j), e=e, n0=n0, a=a)
-      param <- c(Alg[i], Prob[j], param)
-      values <- do.call(sampling, param)
+      input <- c(Alg[i], Prob[j], param)
+      values <- do.call(sampling, input)
       #adding entry to collapsed database of fixed size
       df_short$Alg[l] <- i
       df_short$Prob[l] <- j
