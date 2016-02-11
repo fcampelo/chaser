@@ -5,8 +5,8 @@
 \title{Automatically determine sample size for an algorithm on a problem instance}
 \usage{
 run_nreps(instance, algo, dmax, stat = c("mean", "median"),
-  method = c("param", "boot"), alpha = 0.05, nstart = 20, nmax = Inf,
-  seed = NULL, ...)
+  method = c("param", "boot", "binom"), alpha = 0.05, nstart = 20,
+  nmax = Inf, seed = NULL, ...)
 }
 \arguments{
 \item{instance}{a list object containing the definitions of the problem
@@ -19,13 +19,15 @@ See Section \code{Problems and Algorithms} for details.}
 mean/median performance of algorithm \code{algo} on instance
 \code{problem}.}
 
-\item{stat}{statistic to use in the estimation.}
+\item{stat}{name of statistic for which the CI is desired.}
 
-\item{method}{method used to calculate the interval.}
+\item{method}{method used to calculate the interval. Accepts "param" (the
+default), "boot" (for bootstrap) or "binom" (for binomial median CI)}
 
-\item{alpha}{significance level for the confidence intervals.}
+\item{alpha}{desired significance level for the interval.}
 
-\item{nstart}{initial number of algorithm runs.}
+\item{nstart}{initial number of algorithm runs.
+See \code{Initial Number of Observations} for details.}
 
 \item{nmax}{maximum allowed sample size.}
 
@@ -109,6 +111,20 @@ That is, it must be able to run if called as:
 The \code{algorithm$name} routine must return a list containing (at
 least) the function value of the final solution obtained
 (\code{result$Fbest)} after a given run.
+}
+
+\section{Initial Number of Observations}{
+
+In the general case the initial number of observations / algorithm / instance
+(\code{nstart}) should be relatively high (> 20 if outliers are not
+expected, > 50 (at least) if that assumption can't be made) to guarantee good
+statistical properties (particularly compliance with nominal type-I error
+rate \code{alpha}). However, if some distributional assumptions can be
+made - particularly low skewness of the population of algorithm results on
+the test instances), then \code{nstart} can in principle be as small as 5.
+
+In general, higher sample sizes are the price to pay for abandoning
+distributional assumptions. Use lower values of \code{nstart} with caution.
 }
 
 \section{References}{

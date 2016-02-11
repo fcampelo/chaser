@@ -5,8 +5,8 @@
 \title{Comparison of Heuristics with Adaptive Sample size Estimation}
 \usage{
 run_chase(instances, algorithms, dmax, stat = c("mean", "median"),
-  method = c("param", "boot"), alpha = 0.05, nstart = 20, nmax = Inf,
-  seed = NULL, ...)
+  method = c("param", "boot", "binom"), alpha = 0.05, nstart = 20,
+  nmax = Inf, seed = NULL, ...)
 }
 \arguments{
 \item{instances}{a list object containing lists defining all problem
@@ -14,26 +14,27 @@ instances to be used in the experiment.
 See \code{Instances and Algorithms} for details.}
 
 \item{algorithms}{a list object containing lists defining all algorithms to
-be used in the experiment.
-See \code{Instances and Algorithms} for details.}
+   be used in the experiment.
+   See \code{Instances and Algorithms} for details.}
 
-\item{dmax}{desired confidence interval halfwidth for the estimated mean
-performance of each algorithm on each instance.}
+\item{dmax}{desired confidence interval halfwidth for the estimated
+mean/median performance of algorithm \code{algo} on instance
+\code{problem}.}
 
-\item{stat}{statistic to use in the estimation.}
+\item{stat}{name of statistic for which the CI is desired.}
 
-\item{method}{method used to calculate the interval.}
+\item{method}{method used to calculate the interval. Accepts "param" (the
+default), "boot" (for bootstrap) or "binom" (for binomial median CI)}
 
-\item{alpha}{significance level for the confidence intervals on the means of
-each algo-problem pair.}
+\item{alpha}{desired significance level for the interval.}
 
 \item{nstart}{initial number of algorithm runs.
 See \code{Initial Number of Observations} for details.}
 
 \item{nmax}{maximum allowed sample size.}
 
-\item{seed}{seed for the random number generator.
-See \code{Random seed} for details.}
+\item{seed}{seed for the random number generator
+(\code{NULL} for using \code{Sys.time()}).}
 
 \item{...}{further parameters to be passed on to \code{boot}
          (if method == "boot")}
@@ -108,7 +109,7 @@ In general, higher sample sizes are the price to pay for abandoning
 distributional assumptions. Use lower values of \code{nstart} with caution.
 }
 \examples{
-instance <- list(
+instances <- list(
 list(name = "rnorm sd=1",     xmin = 0, xmax = 1),
 list(name = "rnorm sd=4",     xmin = 0, xmax = 1),
 list(name = "rnorm sd=16",    xmin = 0, xmax = 1),
@@ -116,9 +117,8 @@ list(name = "rexp rate=0.25", xmin = 0, xmax = 1),
 list(name = "rexp rate=0.5",  xmin = 0, xmax = 1),
 list(name = "rexp rate=1",    xmin = 0, xmax = 1))
 
-algo <- list(myalgo = list(name = "distribution.test"))
-out  <- run_chase(instances = instance, algorithms = algo, dmax = 1,
-                  stat = "mean", method = "boot")
+algorithms <- list(myalgo = list(name = "distribution.test"))
+out <- run_chase(instances, algorithms, dmax = 1, stat = "median", method = "param")
 }
 \author{
 Felipe Campelo (\email{fcampelo@ufmg.br}),

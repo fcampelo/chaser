@@ -54,25 +54,14 @@
 #' In general, higher sample sizes are the price to pay for abandoning
 #' distributional assumptions. Use lower values of \code{nstart} with caution.
 #'
+#' @inheritParams run_nreps
+#' @inheritParams calc_ci
 #' @param instances a list object containing lists defining all problem
 #'    instances to be used in the experiment.
 #'    See \code{Instances and Algorithms} for details.
 #' @param algorithms a list object containing lists defining all algorithms to
 #'    be used in the experiment.
 #'    See \code{Instances and Algorithms} for details.
-#' @param dmax desired confidence interval halfwidth for the estimated mean
-#'    performance of each algorithm on each instance.
-#' @param stat statistic to use in the estimation.
-#' @param method method used to calculate the interval.
-#' @param alpha significance level for the confidence intervals on the means of
-#'    each algo-problem pair.
-#' @param nstart initial number of algorithm runs.
-#'      See \code{Initial Number of Observations} for details.
-#' @param nmax maximum allowed sample size.
-#' @param seed seed for the random number generator.
-#'      See \code{Random seed} for details.
-#' @param ... further parameters to be passed on to \code{boot}
-#'          (if method == "boot")
 #'
 #' @return a list object containing the following items:
 #' \itemize{
@@ -102,7 +91,7 @@ run_chase <- function(instances,                   # list of instances
                       algorithms,                  # list fo algorithms
                       dmax,                        # desired (max) CI halfwidth
                       stat   = c("mean", "median"),# statistic to use
-                      method = c("param", "boot"), # technique to calculate CI
+                      method = c("param", "boot", "binom"), # technique to calculate CI
                       alpha  = 0.05,               # significance level for CI
                       nstart = 20,                 # initial number of samples
                       nmax   = Inf,                # maximum allowed sample size

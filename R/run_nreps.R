@@ -61,7 +61,19 @@
 #' least) the function value of the final solution obtained
 #' (\code{result$Fbest)} after a given run.
 #'
+#' @section Initial Number of Observations:
+#' In the general case the initial number of observations / algorithm / instance
+#' (\code{nstart}) should be relatively high (> 20 if outliers are not
+#' expected, > 50 (at least) if that assumption can't be made) to guarantee good
+#' statistical properties (particularly compliance with nominal type-I error
+#' rate \code{alpha}). However, if some distributional assumptions can be
+#' made - particularly low skewness of the population of algorithm results on
+#' the test instances), then \code{nstart} can in principle be as small as 5.
 #'
+#' In general, higher sample sizes are the price to pay for abandoning
+#' distributional assumptions. Use lower values of \code{nstart} with caution.
+#'
+#' @inheritParams calc_ci
 #' @param instance a list object containing the definitions of the problem
 #'    instance. See Section \code{Problems and Algorithms} for details.
 #' @param algo a list object containing the definitions of the algorithm.
@@ -69,10 +81,8 @@
 #' @param dmax desired confidence interval halfwidth for the estimated
 #'          mean/median performance of algorithm \code{algo} on instance
 #'          \code{problem}.
-#' @param stat statistic to use in the estimation.
-#' @param method method used to calculate the interval.
-#' @param alpha significance level for the confidence intervals.
 #' @param nstart initial number of algorithm runs.
+#'      See \code{Initial Number of Observations} for details.
 #' @param nmax maximum allowed sample size.
 #' @param seed seed for the random number generator
 #'          (\code{NULL} for using \code{Sys.time()}).
@@ -114,7 +124,7 @@ run_nreps <- function(instance,                    # instance parameters
                       algo,                        # algorithm parameters
                       dmax,                        # desired (max) CI halfwidth
                       stat   = c("mean", "median"),# statistic to use
-                      method = c("param", "boot"), # technique to calculate CI
+                      method = c("param", "boot", "binom"), # technique to calculate CI
                       alpha  = 0.05,               # significance level for CI
                       nstart = 20,                 # initial number of samples
                       nmax   = Inf,                # maximum allowed sample size

@@ -9,10 +9,10 @@ calc_ci(x, stat = "mean", method = "param", alpha = 0.05, ...)
 \arguments{
 \item{x}{vector of observations}
 
-\item{stat}{name of statistic function to calculate CI for.}
+\item{stat}{name of statistic for which the CI is desired.}
 
 \item{method}{method used to calculate the interval. Accepts "param" (the
-default) or "boot" (for bootstrap)}
+default), "boot" (for bootstrap) or "binom" (for binomial median CI)}
 
 \item{alpha}{desired significance level for the interval.}
 
