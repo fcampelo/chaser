@@ -1,6 +1,46 @@
-#' Calcultes the number os instances
+#' Calcultes the number of instances
+#'
+#' Return either the number of isntances, the effect size or the power of the
+#' comparision considering the other two
+#'
+#' This routine uses the closed formula of the t-test to calculates the number
+#' of instances necessary for a comparition of k algorithms, considering given
+#' power and  effect size.
+#' In case the number of instaces is already known, it can return the effect
+#' size or power, given the other
+#'
+#' @section Number of Instances:
 #'
 #'
+#' @param ninstances the number of instances to be used in the experiment.
+#'    See \code{Number of Instances} for details.
+#' @param cpower power deisred for the comparision
+#'    See \code{Number of Instances} for details.
+#' @param d desired effect size normalized by the standart deviation
+#'    See \code{Number of Instances} for details.
+#' @param algorithms the number of algorithms to be comparred or a list object
+#'    containing lists defining all algorithms to
+#'    be used in the experiment
+#' @param alpha significance level for the confidence intervals on the means of
+#'    each algo-problem pair.
+#' @param alpha.correction is the type of alpha correction used - default is
+#'    \code{holm}
+#' @param comparetype defines if the comparition is 'all vc all' or 'one vs all'-
+#'    default is \code{one}
+#' @param direction is the direction of the distribution 1 for 1-sided and 2 for
+#'    2-sided - default is \code{2}
+#' @param nmax maximum allowed number of instances
+#'
+#' @return a list object containing the following items:
+#' \itemize{
+#'    \item \code{ninstances} - number of instances
+#'    \item \code{cpower} - the power of the comparision
+#'    \item \code{d} - the effect size
+#'    \item \code{corrected.aplha} - the corrected alpha
+#'    and some input parameters: algorithms, alpha and nmax as given
+#' }
+#'
+#' @author Felipe Campelo (\email{fcampelo@@ufmg.br}), Fernanda Takahashi (\email{fernandact@@ufmg.br})
 #'
 #' @export
 
