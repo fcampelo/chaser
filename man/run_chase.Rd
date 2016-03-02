@@ -14,27 +14,27 @@ instances to be used in the experiment.
 See \code{Instances and Algorithms} for details.}
 
 \item{algorithms}{a list object containing lists defining all algorithms to
-   be used in the experiment.
-   See \code{Instances and Algorithms} for details.}
+be used in the experiment.
+See \code{Instances and Algorithms} for details.}
 
-\item{dmax}{desired confidence interval halfwidth for the estimated
-mean/median performance of algorithm \code{algo} on instance
-\code{problem}.}
+\item{dmax}{desired confidence interval halfwidth for the estimated mean
+performance of each algorithm on each instance.}
 
 \item{stat}{name of statistic for which the CI is desired.}
 
 \item{method}{method used to calculate the interval. Accepts "param" (the
 default), "boot" (for bootstrap) or "binom" (for binomial median CI)}
 
-\item{alpha}{desired significance level for the interval.}
+\item{alpha}{significance level for the confidence intervals on the means of
+each algo-problem pair.}
 
 \item{nstart}{initial number of algorithm runs.
 See \code{Initial Number of Observations} for details.}
 
 \item{nmax}{maximum allowed sample size.}
 
-\item{seed}{seed for the random number generator
-(\code{NULL} for using \code{Sys.time()}).}
+\item{seed}{seed for the random number generator.
+     See \code{Random seed} for details.}
 
 \item{...}{further parameters to be passed on to \code{boot}
          (if method == "boot")}
