@@ -62,6 +62,15 @@
 #' @param algorithms a list object containing lists defining all algorithms to
 #'    be used in the experiment.
 #'    See \code{Instances and Algorithms} for details.
+#' @param dmax desired confidence interval halfwidth for the estimated mean
+#'    performance of each algorithm on each instance.
+#' @param alpha significance level for the confidence intervals on the means of
+#'    each algo-problem pair.
+#' @param nstart initial number of algorithm runs.
+#'      See \code{Initial Number of Observations} for details.
+#' @param nmax maximum allowed sample size.
+#' @param seed seed for the random number generator.
+#'      See \code{Random seed} for details.
 #'
 #' @return a list object containing the following items:
 #' \itemize{
@@ -84,7 +93,7 @@
 #'
 #' algorithms <- list(myalgo = list(name = "distribution.test"))
 #' out <- run_chase(instances, algorithms, dmax = 1, stat = "median", method = "param")
-
+#'
 #' @export
 
 run_chase <- function(instances,                   # list of instances
@@ -134,12 +143,12 @@ run_chase <- function(instances,                   # list of instances
     # Initialize data.raw dataframe with its smallest possible size,
     # i.e., nprobs * nalgos * nstart
     algonames <- unlist(lapply(algorithms, function(x) x$name))
-    probnames <- unlist(lapply(instances,  function(x) x$name))
-    data.raw  <- data.frame(Algorithm   = factor(x      = character(nprobs * nalgos * nstart),
-                                                 levels = unique(algonames)),
-                            Instance    = factor(x      = character(nprobs * nalgos * nstart),
-                                                 levels = unique(probnames)),
-                            Observation = numeric(nprobs * nalgos * nstart))
+    probnames <- unlist(lapply(instances, function(x) x$name))
+    data.raw <- data.frame(Algorithm   = factor(x = character(nprobs * nalgos * nstart),
+                                                levels = unique(algonames)),
+                           Instance    = factor(x = character(nprobs * nalgos * nstart),
+                                                levels = unique(probnames)),
+                           Observation = numeric(nprobs * nalgos * nstart))
 
     # Keep an "empty" copy of data.raw in case we need to grow it in the
     # iterative cycle (which is almost guaranteed)
