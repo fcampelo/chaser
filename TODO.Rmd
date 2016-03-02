@@ -1,10 +1,12 @@
 ---
 title: "TODO"
 author: "Felipe Campelo"
-date: "January 15, 2016"
+date: "February 10, 2016"
 output: html_document
 ---
 
-- Test run_chase()
-- Finish debugging version 0
+- Re-test run_chase()
+- Finish testing/debugging version 0
+- Re-test calc_ci()
+- Document the ridiculous amount of time taken by the bootstrap. Maybe add an input parameter for growing the sample more quickly, which will need fewer bootstraps (= faster).
 - Paralelize evaluations
