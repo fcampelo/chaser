@@ -6,7 +6,7 @@
 #' This routine is used to calculate confidence intervals on the mean or median,
 #' based either in the parametric formulas or in bootstrap resampling.
 #'
-#' #' @section References:
+#' @section References:
 #' R.R. Sokal, F.J. Rohlf.
 #' "Biometry".
 #' W.H. Freeman, 4th ed., 2011, p. 139
