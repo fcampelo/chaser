@@ -116,6 +116,7 @@ run_chase <- function(instances,                   # list of instances
         is.infinite(nmax) || assertthat::is.count(nmax),
         nmax > nstart,
         is.null(seed) || assertthat::is.count(seed))
+    # ==================================== #
 
     # Number of instances and algorithms
     nprobs <- length(instances)

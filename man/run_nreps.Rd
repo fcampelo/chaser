@@ -132,9 +132,10 @@ distributional assumptions. Use lower values of \code{nstart} with caution.
 P. Mathews.
 "Sample size calculations: Practical methods for engineers and scientists".
 Mathews Malnar and Bailey, 2010.
+
 J. Botella, C. Ximenez, J. Revuelta, M. Suero.
 "Optimization of sample size in controlled experiments: the CLAST rule".
-Behavior Research Methods, 38(1) 65 - 76, 2006
+Behavior Research Methods, 38(1):65-76, 2006
 }
 \examples{
 instance <- list(name = "dummyinstance", xmax = 1, xmin = 0)

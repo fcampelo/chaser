@@ -107,9 +107,10 @@
 #' P. Mathews.
 #' "Sample size calculations: Practical methods for engineers and scientists".
 #' Mathews Malnar and Bailey, 2010.
+#'
 #' J. Botella, C. Ximenez, J. Revuelta, M. Suero.
 #' "Optimization of sample size in controlled experiments: the CLAST rule".
-#' Behavior Research Methods, 38(1) 65 - 76, 2006
+#' Behavior Research Methods, 38(1):65-76, 2006
 #'
 #' @examples
 #' instance <- list(name = "dummyinstance", xmax = 1, xmin = 0)
@@ -132,7 +133,7 @@ run_nreps <- function(instance,                    # instance parameters
                       ...)                         # parameters for boot
 {
 
-  # ========== Error catching ========== #
+    # ========== Error catching ========== #
     # If the calling function was run_chase(), then skip the testing
     # since it has already been done
     if(!exists("run_chase.errorckeck.performed", envir = parent.frame(1))){
@@ -148,44 +149,44 @@ run_nreps <- function(instance,                    # instance parameters
             is.infinite(nmax) || assertthat::is.count(nmax),
             nmax > nstart,
             is.null(seed) || assertthat::is.count(seed))
-}
-  # ==================================== #
+    }
+    # ==================================== #
 
-  # set PRNG seed
-  if(is.null(seed)) {seed <- as.integer(Sys.time())}
-  set.seed(seed)
+    # set PRNG seed
+    if(is.null(seed)) {seed <- as.integer(Sys.time())}
+    set.seed(seed)
 
-  # initial definitions
-  n     <- nstart - 1       # initial number of observations
-  delta <- Inf              # initial CI halfwidth
+    # initial definitions
+    n     <- nstart - 1       # initial number of observations
+    delta <- Inf              # initial CI halfwidth
 
-  # initialize vector of observations
-  x <- get_observations(algo, instance, n)
+    # initialize vector of observations
+    x <- get_observations(algo, instance, n)
 
-  # Iterative cycle
-  while(delta > dmax && n <= nmax){
-    # Generate a new observation
-    x       <- c(x, get_observations(algo, instance, 1))
-    n       <- n + 1
+    # Iterative cycle
+    while(delta > dmax && n <= nmax){
+        # Generate a new observation
+        x       <- c(x, get_observations(algo, instance, 1))
+        n       <- n + 1
 
-    # Calculate CI halfwidth
-    CI      <- calc_ci(x,
-                       stat   = stat,
-                       method = method,
-                       alpha  = alpha,
-                       ...)
-    delta   <- diff(CI$ci) / 2
-  }
+        # Calculate CI halfwidth
+        CI      <- calc_ci(x,
+                           stat   = stat,
+                           method = method,
+                           alpha  = alpha,
+                           ...)
+        delta   <- diff(CI$ci) / 2
+    }
 
-  output<-list(x      = x,
-               x.est  = CI$est,
-               x.CI   = CI$ci,
-               n      = n,
-               se     = CI$se,
-               delta  = delta,
-               seed   = seed,
-               stat   = stat,
-               method = method)
+    output<-list(x      = x,
+                 x.est  = CI$est,
+                 x.CI   = CI$ci,
+                 n      = n,
+                 se     = CI$se,
+                 delta  = delta,
+                 seed   = seed,
+                 stat   = stat,
+                 method = method)
 
-  return(output)
+    return(output)
 }
