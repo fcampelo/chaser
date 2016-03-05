@@ -133,6 +133,7 @@
 #'          comparisons} for details).
 #' @param direction type of alternative hypotheses planned (see
 #'          \code{Directionality of the alternative hypothesis} for details).
+#' @param max.instances maximum allowed number of instances.
 #'
 #' @return List object containing the input fields, plus the calculated values
 #'          as described in section \code{Usage}.
@@ -151,37 +152,54 @@ chase_sample_size <- function(N              = NULL,
                               alpha,
                               mht.correction = "holm",
                               comparetype    = c("one-vs-all", "all-vs-all"),
-                              direction      = c("one-sided" , "two-sided"))
+                              direction      = c("one-sided" , "two-sided"),
+                              max.instances  = Inf)
 {
     # ========== Error catching ========== #
-    assertthat::assert_that(
-        sum(sapply(list(N, cpower, d), is.null)) == 1 ||
+    # If d is NULL and (delta + sigma) are defined then define d = delta/sigma
+    if(is.null(d) & !any(sapply(list(delta, sigma), is.null))) d <- delta/sigma
 
-        (is.null(N) && !is.null(cpower) && !is.null(d)) || (!is.null(N)&& is.null(cpower)|| is.null(d)),
-        is.list(algorithms)|| assertthat::is.count(algorithms),
+    # if "algorithms" is given as a list use the list length
+    if(is.list(algorithms)) nalg <- length(algorithms) else nalg <- algorithms
+
+    # Check consistency of the inputs
+    assertthat::assert_that(
+        sum(sapply(list(N, cpower, d), is.null) <= 2),
+        is.null(N) || assertthat::is.count(N),
+        is.null(cpower) || (assertthat::is.number(cpower) && cpower > 0 && cpower < 1),
+        is.null(d) || (assertthat::is.number(d) && d > 0),
+        assertthat::is.count(nalg) && nalg > 1,
         is.numeric(alpha) && alpha > 0 && alpha < 1,
-        is.infinite(nmax) || assertthat::is.count(nmax))
+        is.character(mht.correction) && length(mht.correction) == 1,
+        mht.correction %in% c("holm"),
+        is.character(comparetype) && length(comparetype) == 1,
+        comparetype %in% c("one-vs-all", "all-vs-all"),
+        is.character(direction) && length(direction) == 1,
+        direction %in% c("one-sided" , "two-sided"),
+        assertthat::are_equal(direction, "two-sided") || assertthat::are_equal(comparetype, "one-vs-all"),
+        is.infinite(max.instances) || assertthat::is.count(max.instances))
     # ==================================== #
 
-
-    if (is.list(algorithms)){
-        nalg <- length(algorithms)
-    }else{
-        nalg <- algorithms
-    }
-    if (tolower(comparetype == "one")){
+    # ========== Standard defitinions ========== #
+    if (comparetype == "one-vs-all"){
         k.correction <- nalg-1
-    }else{
-        k.correction <- nalg*(nalg-1)/2
+    } else{
+        k.correction <- nalg * (nalg - 1) / 2
     }
-    if (tolower(mht.correction) == "holm"){
-        corrected.alpha <-  (1-(1-alpha)^(k.correction))/direction
+    if (direction == "two-sided") dir <- 2 else dir <- 1
+
+
+    if (mht.correction == "holm"){
+        corrected.alpha <-  (1 - (1 - alpha) ^ k.correction) / dir
     }
+
+    #==== STOPPED HERE
+
     if (is.null(N)){
         t_b <- qnorm(cpower)
-        t_a <- qnorm(1-corrected.alpha)
+        t_a <- qnorm(1 - corrected.alpha)
         N <- ceiling(((t_b + t_a)*(1/d))^2)
-        while ((t_a <= t_b)&&(N < nmax)){
+        while ((t_a <= t_b) && (N < nmax)){
             N <- N+1
             t_a <- qt(1-corrected.alpha,N-1)
             t_b <- qt(cpower, N-1)
