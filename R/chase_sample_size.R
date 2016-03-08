@@ -196,42 +196,46 @@ chase_sample_size <- function(N              = NULL,
     #==== STOPPED HERE
 
     if (is.null(N)){
-        t_b <- qnorm(cpower)
-        t_a <- qnorm(1 - corrected.alpha)
-        N <- ceiling(((t_b + t_a)*(1/d))^2)
-        while ((t_a <= t_b) && (N < nmax)){
-            N <- N+1
-            t_a <- qt(1-corrected.alpha,N-1)
-            t_b <- qt(cpower, N-1)
+        if (is.null(cpower)){ # Return N x cpower curves
+
+
+        } else if (is.null(d)){ # Return N x d curves
+
+
+        } else { # Calculate N
+            # [FIXME: CORRECT NONCENTRALITY PARAMETER]
+            N   <- 2                           # 2 is the minimal sample size
+            t_b <- qt(p = cpower, df = N - 1, ncp = d)
+            t_a <- qt(p = 1 - corrected.alpha, df = N - 1)
+            while ((t_a > t_b) && (N <= max.instances)){
+                N <- N + 1
+                t_b <- qt(p = cpower, df = N - 1, ncp = d)
+                t_a <- qt(p = 1 - corrected.alpha, df = N - 1)
+            }
         }
+
     }
     else{
-        if(is.null(cpower)&&is.null(d)){
-            t_a <- qt(1-corrected.alpha,N-1)
-            cpower <- c(0.1, 0.3, 0.5, 0.7, 0.9)
-            d <- sapply(cpower, function(x) ((qt(x, N-1) +t_a)/sqrt(N)))
-        }
-        else{
-            if(is.null(cpower)){
-                t_b <- (d) * sqrt(N) - qt(1-corrected.alpha, N-1)
-                cpower <- pt(t_b, N-1)
-            }
-            else{
-                t_a <- qt(1-corrected.alpha,N-1)
-                t_b <- qt(cpower, N-1)
-                d <- ((t_b +t_a)/sqrt(N))
-            }
-        }
+        if(is.null(cpower) && is.null(d)){ # Return d x cpower curves
+            t_a    <- qt(1 - corrected.alpha, N - 1)
+            cpower <- seq(from = 0.1, to = 0.9, by = 0.05)
+            d      <- sapply(cpower, function(x) ((qt(x, N - 1) + t_a) / sqrt(N)))
+        } else if(is.null(cpower)){ # Calculate power
+            t_b    <- (d) * sqrt(N) - qt(1 - corrected.alpha, N - 1)
+            cpower <- pt(t_b, N - 1)
+        } else if(is.null(d)){ # Calculate minimal detectable effect size at power 'cpower'
+            t_a    <- qt(1 - corrected.alpha, N - 1)
+            t_b    <- qt(cpower, N - 1)
+            d      <- ((t_b + t_a) / sqrt(N))
+        } else stop("All parameters provided to chase_sample_size()\nNothing to calculate")
     }
-    #print(N)
-    #print(cpower)
-    #print(d)
-    output<-list(N     = N,
-                 cpower         = cpower,
-                 d              = d,
+
+    output<-list(N               = N,
+                 cpower          = cpower,
+                 d               = d,
                  corrected.alpha = corrected.alpha,
-                 algorithms   = algorithms,
-                 alpha        = alpha,
-                 nmax         = nmax)
+                 algorithms      = algorithms,
+                 alpha           = alpha,
+                 nmax            = nmax)
     return(output)
 }
