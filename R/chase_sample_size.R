@@ -203,13 +203,13 @@ chase_sample_size <- function(N              = NULL,
 
 
         } else { # Calculate N
-            # [FIXME: CORRECT NONCENTRALITY PARAMETER]
+            # [FIXME: CORRECT THIS TO MATCH POWER.T.TEST]
             N   <- 2                           # 2 is the minimal sample size
-            t_b <- qt(p = cpower, df = N - 1, ncp = d)
+            t_b <- qt(p = cpower, df = N - 1, ncp = d * sqrt(N))
             t_a <- qt(p = 1 - corrected.alpha, df = N - 1)
             while ((t_a > t_b) && (N <= max.instances)){
                 N <- N + 1
-                t_b <- qt(p = cpower, df = N - 1, ncp = d)
+                t_b <- qt(p = cpower, df = N - 1, ncp = d * sqrt(N))
                 t_a <- qt(p = 1 - corrected.alpha, df = N - 1)
             }
         }
