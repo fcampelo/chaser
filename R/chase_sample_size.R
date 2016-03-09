@@ -71,12 +71,12 @@
 #' Depending on the type of comparison being planned, a different set of tests
 #' can be performed: for instance, for a general comparison of methods (in which
 #' there is no algorithm that is of particular interest to the researcher) an
-#' "all-vs-all" comparison (\code{comparetype = "all-vs-all"}) should be
+#' "all-vs-all" comparison (\code{comparetype = "all.vs.all"}) should be
 #' performed, to obtain a complete ordering of performance among the
 #' alternatives. In this case \code{K * (K - 1) / 2} comparisons are performed.
 #' On the other hand, if there is a single method in which the researcher is
 #' particularly interested in (usually the "proposed algorithm") an "all-vs-one"
-#' comparison can be used (\code{comparetype = "one-vs-all"}), since in this
+#' comparison can be used (\code{comparetype = "one.vs.all"}), since in this
 #' case the question of interest is how one particular algorithm compares
 #' against the others. In this case the total number of comparisons is
 #' \code{K - 1}, which means that the MHT correction of \code{alpha} is smaller,
@@ -85,9 +85,9 @@
 #'
 #' @section Directionality of the alternative hypothesis:
 #' In the case of an "all-vs-one" comparison, the researcher may be interested
-#' in two kinds of alternative hypotheses: \code{direction = "two-sided"},
+#' in two kinds of alternative hypotheses: \code{direction = "two.sided"},
 #' if he wants to infer whether the "proposed algorithm" is \emph{different}
-#' from each of the competing approaches; or \code{direction = "one-sided"}, if
+#' from each of the competing approaches; or \code{direction = "one.sided"}, if
 #' he is only interested in determining whether it is \emph{better} than the
 #' others. In the former, the statistical question is
 #' "\emph{is the method better or worse than the others, or is it not
@@ -109,10 +109,14 @@
 #' multiple testing".
 #' Journal of the Royal Statistical Society Series B 57:289-300, 1995.
 #'
-#' Y. Benjamini and D. Yekutieli
+#' Y. Benjamini, D. Yekutieli.
 #' "The control of the false discovery rate in multiple testing under
 #' dependency".
 #' Annals of Statistics 29:1165-1188, 2001.
+#'
+#' D.A. Harrison, A.R. Brady.
+#' "Sample size and power calculations using the noncentral t-distribution"
+#' The Stata Journal 4(2):142-153, 2004.
 #'
 #' @param N number of instances to be used in the experiment.
 #' @param cpower desired power for the comparison.
@@ -151,16 +155,22 @@ chase_sample_size <- function(N              = NULL,
                               algorithms,
                               alpha,
                               mht.correction = "holm",
-                              comparetype    = c("one-vs-all", "all-vs-all"),
-                              direction      = c("one-sided" , "two-sided"),
+                              comparetype    = c("one.vs.all", "all.vs.all"),
+                              direction      = c("one.sided" , "two.sided"),
                               max.instances  = Inf)
 {
     # ========== Error catching ========== #
     # If d is NULL and (delta + sigma) are defined then define d = delta/sigma
-    if(is.null(d) & !any(sapply(list(delta, sigma), is.null))) d <- delta/sigma
+    if(is.null(d) & !any(sapply(list(delta, sigma), is.null))) d <- delta / sigma
+    d <- abs(d)
 
     # if "algorithms" is given as a list use the list length
     if(is.list(algorithms)) nalg <- length(algorithms) else nalg <- algorithms
+
+    # Match arguments
+    mht.correction  <- match.arg(mht.correction)
+    comparetype     <- match.arg(comparetype)
+    direction       <- match.arg(direction)
 
     # Check consistency of the inputs
     assertthat::assert_that(
@@ -173,27 +183,46 @@ chase_sample_size <- function(N              = NULL,
         is.character(mht.correction) && length(mht.correction) == 1,
         mht.correction %in% c("holm"),
         is.character(comparetype) && length(comparetype) == 1,
-        comparetype %in% c("one-vs-all", "all-vs-all"),
+        comparetype %in% c("one.vs.all", "all.vs.all"),
         is.character(direction) && length(direction) == 1,
-        direction %in% c("one-sided" , "two-sided"),
-        assertthat::are_equal(direction, "two-sided") || assertthat::are_equal(comparetype, "one-vs-all"),
+        direction %in% c("one.sided" , "two.sided"),
+        assertthat::are_equal(direction, "two.sided") || assertthat::are_equal(comparetype, "one.vs.all"),
         is.infinite(max.instances) || assertthat::is.count(max.instances))
     # ==================================== #
 
-    # ========== Standard defitinions ========== #
-    if (comparetype == "one-vs-all"){
-        k.correction <- nalg-1
-    } else{
-        k.correction <- nalg * (nalg - 1) / 2
-    }
-    if (direction == "two-sided") dir <- 2 else dir <- 1
+
+    # ======= Standard defitinions ======= #
+
+    k.correction    <- switch(comparetype,
+                              one.vs.all = nalg - 1,
+                              all.vs.all = nalg * (nalg - 1) / 2)
+    dir             <- switch(direction,
+                              one.sided = 1,
+                              two.sided = 2)
+    alpha.adj       <- switch(mht.correction,
+                              holm       = 1 - (1 - alpha) ^ k.correction / dir,
+                              bonferroni = (alpha / k) / dir)
+
+    # ==================================== #
 
 
-    if (mht.correction == "holm"){
-        corrected.alpha <-  (1 - (1 - alpha) ^ k.correction) / dir
-    }
-
-    #==== STOPPED HERE
+    # =========== Calculations =========== #
+    # function p.body adapted from stats::power.t.test() and consistent with
+    # Harrison and Brady (2004)
+    p.body <- quote({
+        qu <- qt(p          = alpha.adj / dir,
+                 df         = N - 1,
+                 lower.tail = FALSE)
+        p1 <- pt(q          = qu,
+                 df         = N - 1,
+                 ncp        = d * sqrt(N),
+                 lower.tail = FALSE)
+        p2 <- pt(q          = -qu,
+                 df         = N - 1,
+                 ncp        = d * sqrt(N),
+                 lower.tail = TRUE)
+        return(p1 + p2)
+    })
 
     if (is.null(N)){
         if (is.null(cpower)){ # Return N x cpower curves
@@ -203,37 +232,30 @@ chase_sample_size <- function(N              = NULL,
 
 
         } else { # Calculate N
-            # [FIXME: CORRECT THIS TO MATCH POWER.T.TEST]
-            N   <- 2                           # 2 is the minimal sample size
-            t_b <- qt(p = cpower, df = N - 1, ncp = d * sqrt(N))
-            t_a <- qt(p = 1 - corrected.alpha, df = N - 1)
-            while ((t_a > t_b) && (N <= max.instances)){
-                N <- N + 1
-                t_b <- qt(p = cpower, df = N - 1, ncp = d * sqrt(N))
-                t_a <- qt(p = 1 - corrected.alpha, df = N - 1)
-            }
+            N <- uniroot(f         = function(N) eval(p.body) - cpower,
+                         interval  = c(2, max.instances),
+                         extendInt = "upX")$root
         }
 
     }
     else{
         if(is.null(cpower) && is.null(d)){ # Return d x cpower curves
-            t_a    <- qt(1 - corrected.alpha, N - 1)
-            cpower <- seq(from = 0.1, to = 0.9, by = 0.05)
-            d      <- sapply(cpower, function(x) ((qt(x, N - 1) + t_a) / sqrt(N)))
+
         } else if(is.null(cpower)){ # Calculate power
-            t_b    <- (d) * sqrt(N) - qt(1 - corrected.alpha, N - 1)
-            cpower <- pt(t_b, N - 1)
+            cpower <- eval(p.body)
         } else if(is.null(d)){ # Calculate minimal detectable effect size at power 'cpower'
-            t_a    <- qt(1 - corrected.alpha, N - 1)
-            t_b    <- qt(cpower, N - 1)
-            d      <- ((t_b + t_a) / sqrt(N))
-        } else stop("All parameters provided to chase_sample_size()\nNothing to calculate")
+            N <- uniroot(f         = function(d) eval(p.body) - cpower,
+                         interval  = c(0, 10),
+                         extendInt = "upX")$root
+        } else {
+            stop("All parameters provided to chase_sample_size()\nNothing to calculate")
+        }
     }
 
     output<-list(N               = N,
                  cpower          = cpower,
                  d               = d,
-                 corrected.alpha = corrected.alpha,
+                 alpha.adj       = alpha.adj,
                  algorithms      = algorithms,
                  alpha           = alpha,
                  nmax            = nmax)
