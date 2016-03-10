@@ -137,7 +137,6 @@
 #'          comparisons} for details).
 #' @param direction type of alternative hypotheses planned (see
 #'          \code{Directionality of the alternative hypothesis} for details).
-#' @param max.instances maximum allowed number of instances.
 #'
 #' @return List object containing the input fields, plus the calculated values
 #'          as described in section \code{Usage}.
@@ -156,8 +155,7 @@ chase_sample_size <- function(N              = NULL,
                               alpha,
                               mht.correction = "holm",
                               comparetype    = c("one.vs.all", "all.vs.all"),
-                              direction      = c("one.sided" , "two.sided"),
-                              max.instances  = Inf)
+                              direction      = c("one.sided" , "two.sided"))
 {
     # ========== Error catching ========== #
     # If d is NULL and (delta + sigma) are defined then define d = delta/sigma
@@ -186,8 +184,7 @@ chase_sample_size <- function(N              = NULL,
         comparetype %in% c("one.vs.all", "all.vs.all"),
         is.character(direction) && length(direction) == 1,
         direction %in% c("one.sided" , "two.sided"),
-        assertthat::are_equal(direction, "two.sided") || assertthat::are_equal(comparetype, "one.vs.all"),
-        is.infinite(max.instances) || assertthat::is.count(max.instances))
+        assertthat::are_equal(direction, "two.sided") || assertthat::are_equal(comparetype, "one.vs.all"))
     # ==================================== #
 
 
@@ -200,8 +197,8 @@ chase_sample_size <- function(N              = NULL,
                               one.sided = 1,
                               two.sided = 2)
     alpha.adj       <- switch(mht.correction,
-                              holm       = 1 - (1 - alpha) ^ k.correction / dir,
-                              bonferroni = (alpha / k) / dir)
+                              holm       = 1 - (1 - alpha) ^ k.correction,
+                              bonferroni = alpha / k)
 
     # ==================================== #
 
@@ -221,43 +218,88 @@ chase_sample_size <- function(N              = NULL,
                  df         = N - 1,
                  ncp        = d * sqrt(N),
                  lower.tail = TRUE)
-        return(p1 + p2)
+        p  <- ifelse(dir    == 1,
+                     yes    = p1,
+                     no     = p1 + p2)
+        return(p)
     })
 
     if (is.null(N)){
         if (is.null(cpower)){ # Return N x cpower curves
+            pow.seq <- seq(from = 0.1,
+                           to   = 0.9,
+                           by   = 0.01)
+            N       <- numeric(length(pow.seq))
+            cc      <- 1
+            for (cpower in pow.seq){
+                N[cc] <- uniroot(f         = function(N) eval(p.body) - cpower,
+                                 interval  = c(2, 2e7),
+                                 extendInt = "upX")$root
+                cc    <- cc + 1
+            }
 
+            cpower <- pow.seq
 
         } else if (is.null(d)){ # Return N x d curves
+            d.seq <- seq(from = 0.1,
+                         to   = 5,
+                         by   = 0.1)
+            N     <- numeric(length(d.seq))
+            cc    <- 1
+            for (d in pow.seq){
+                N[cc] <- uniroot(f         = function(N) eval(p.body) - cpower,
+                                 interval  = c(2, 2e7),
+                                 extendInt = "upX")$root
+                cc    <- cc + 1
+            }
 
+            d <- d.seq
 
         } else { # Calculate N
             N <- uniroot(f         = function(N) eval(p.body) - cpower,
-                         interval  = c(2, max.instances),
+                         interval  = c(2, 2e7),
                          extendInt = "upX")$root
         }
 
     }
     else{
         if(is.null(cpower) && is.null(d)){ # Return d x cpower curves
+            pow.seq <- seq(from = 0.1,
+                           to   = 0.9,
+                           by   = 0.01)
+            d       <- numeric(length(pow.seq))
+            cc      <- 1
+            for (cpower in pow.seq){
+                d[cc] <- uniroot(f         = function(d) eval(p.body) - cpower,
+                                 interval  = c(0, 100),
+                                 extendInt = "upX")$root
+                cc    <- cc + 1
+            }
+
+            cpower <- pow.seq
 
         } else if(is.null(cpower)){ # Calculate power
             cpower <- eval(p.body)
+
         } else if(is.null(d)){ # Calculate minimal detectable effect size at power 'cpower'
-            N <- uniroot(f         = function(d) eval(p.body) - cpower,
+            d <- uniroot(f         = function(d) eval(p.body) - cpower,
                          interval  = c(0, 10),
                          extendInt = "upX")$root
+
         } else {
             stop("All parameters provided to chase_sample_size()\nNothing to calculate")
         }
     }
 
-    output<-list(N               = N,
-                 cpower          = cpower,
-                 d               = d,
-                 alpha.adj       = alpha.adj,
-                 algorithms      = algorithms,
-                 alpha           = alpha,
-                 nmax            = nmax)
+    output <- list(N               = N,
+                   cpower          = cpower,
+                   d               = d,
+                   alpha.adj       = alpha.adj,
+                   n.algorithms    = nalg,
+                   mht.correction  = mht.correction,
+                   n.comparisons   = k.correction,
+                   comparetype     = comparetype,
+                   direction       = direction)
+
     return(output)
 }
