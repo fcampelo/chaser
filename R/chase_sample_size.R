@@ -61,10 +61,9 @@
 #' testing} - MHT) the significance level of each test must be corrected to
 #' avoid inflating the familywise error rate.
 #'
-#' In the current version only the single-step Holm correction is considered in
-#' the calculation of the sample size. However, if the analysis is eventually
-#' performed using the Bonferroni correction the loss of power is in most cases
-#' quite small.
+#' The current version implements the Sidak and Bonferroni corrections for the
+#' calculation of the sample size. Future versions may include less conservative
+#' approaches such as Benjamini-Hochberg's or Benjamini-Yekutieli's.
 #'
 #'
 #' @section Types of comparisons:
@@ -145,6 +144,25 @@
 #'          Fernanda Takahashi (\email{fernandact@@ufmg.br})
 #'
 #' @export
+#'
+#' @examples
+#' # What's the required sample size to detect an effect size of d = 0.25
+#' # with power 0.8 and significance 0.05 for a pair of algorithms?
+#' chase_sample_size(cpower = .8, d = .25, algorithms = 2, alpha = .05,
+#'                   comparetype = "all", direction = "two")$N
+#'
+#' # What if we want to compare a 'proposed method' vs. 4 other algorithms,
+#' # and I'm only interested if my method is better than the others (1-sided
+#' # alternative)?
+#' chase_sample_size(cpower = .8, d = .25, algorithms = 5, alpha = .05,
+#'                   comparetype = "one", direction = "one")$N
+#'
+#' # Get the power x effect size curves for a fixed-sized benchmark set (N = 7).
+#' out <- chase_sample_size(N = 7, algorithms = 5, alpha = .05,
+#'                   comparetype = "one", direction = "one")
+#' plot(out$d, out$cpower, type = "b", pch = 16,
+#'      xlab = "Effect size d", ylab = "Power to detect",
+#'      main = "Effect size x Power", las = 1)
 
 chase_sample_size <- function(N              = NULL,
                               cpower         = NULL,
@@ -153,14 +171,13 @@ chase_sample_size <- function(N              = NULL,
                               sigma          = NULL,
                               algorithms,
                               alpha,
-                              mht.correction = "holm",
+                              mht.correction = "sidak",
                               comparetype    = c("one.vs.all", "all.vs.all"),
                               direction      = c("one.sided" , "two.sided"))
 {
     # ========== Error catching ========== #
     # If d is NULL and (delta + sigma) are defined then define d = delta/sigma
     if(is.null(d) & !any(sapply(list(delta, sigma), is.null))) d <- delta / sigma
-    d <- abs(d)
 
     # if "algorithms" is given as a list use the list length
     if(is.list(algorithms)) nalg <- length(algorithms) else nalg <- algorithms
@@ -172,14 +189,14 @@ chase_sample_size <- function(N              = NULL,
 
     # Check consistency of the inputs
     assertthat::assert_that(
-        sum(sapply(list(N, cpower, d), is.null) <= 2),
+        sum(sapply(list(N, cpower, d), is.null)) <= 2,
         is.null(N) || assertthat::is.count(N),
         is.null(cpower) || (assertthat::is.number(cpower) && cpower > 0 && cpower < 1),
         is.null(d) || (assertthat::is.number(d) && d > 0),
         assertthat::is.count(nalg) && nalg > 1,
         is.numeric(alpha) && alpha > 0 && alpha < 1,
         is.character(mht.correction) && length(mht.correction) == 1,
-        mht.correction %in% c("holm"),
+        mht.correction %in% c("sidak", "bonferroni"),
         is.character(comparetype) && length(comparetype) == 1,
         comparetype %in% c("one.vs.all", "all.vs.all"),
         is.character(direction) && length(direction) == 1,
@@ -197,16 +214,16 @@ chase_sample_size <- function(N              = NULL,
                               one.sided = 1,
                               two.sided = 2)
     alpha.adj       <- switch(mht.correction,
-                              holm       = 1 - (1 - alpha) ^ k.correction,
-                              bonferroni = alpha / k)
+                              sidak      = 1 - (1 - alpha) ^ (1 / k.correction),
+                              bonferroni = alpha / k.correction)
 
     # ==================================== #
 
 
     # =========== Calculations =========== #
-    # function p.body adapted from stats::power.t.test() and consistent with
+    # Adapted from stats::power.t.test() and consistent with
     # Harrison and Brady (2004)
-    p.body <- quote({
+    pfun <- quote({
         qu <- qt(p          = alpha.adj / dir,
                  df         = N - 1,
                  lower.tail = FALSE)
@@ -232,7 +249,7 @@ chase_sample_size <- function(N              = NULL,
             N       <- numeric(length(pow.seq))
             cc      <- 1
             for (cpower in pow.seq){
-                N[cc] <- uniroot(f         = function(N) eval(p.body) - cpower,
+                N[cc] <- uniroot(f         = function(N) eval(pfun) - cpower,
                                  interval  = c(2, 2e7),
                                  extendInt = "upX")$root
                 cc    <- cc + 1
@@ -247,7 +264,7 @@ chase_sample_size <- function(N              = NULL,
             N     <- numeric(length(d.seq))
             cc    <- 1
             for (d in pow.seq){
-                N[cc] <- uniroot(f         = function(N) eval(p.body) - cpower,
+                N[cc] <- uniroot(f         = function(N) eval(pfun) - cpower,
                                  interval  = c(2, 2e7),
                                  extendInt = "upX")$root
                 cc    <- cc + 1
@@ -256,7 +273,7 @@ chase_sample_size <- function(N              = NULL,
             d <- d.seq
 
         } else { # Calculate N
-            N <- uniroot(f         = function(N) eval(p.body) - cpower,
+            N <- uniroot(f         = function(N) eval(pfun) - cpower,
                          interval  = c(2, 2e7),
                          extendInt = "upX")$root
         }
@@ -270,7 +287,7 @@ chase_sample_size <- function(N              = NULL,
             d       <- numeric(length(pow.seq))
             cc      <- 1
             for (cpower in pow.seq){
-                d[cc] <- uniroot(f         = function(d) eval(p.body) - cpower,
+                d[cc] <- uniroot(f         = function(d) eval(pfun) - cpower,
                                  interval  = c(0, 100),
                                  extendInt = "upX")$root
                 cc    <- cc + 1
@@ -279,10 +296,10 @@ chase_sample_size <- function(N              = NULL,
             cpower <- pow.seq
 
         } else if(is.null(cpower)){ # Calculate power
-            cpower <- eval(p.body)
+            cpower <- eval(pfun)
 
         } else if(is.null(d)){ # Calculate minimal detectable effect size at power 'cpower'
-            d <- uniroot(f         = function(d) eval(p.body) - cpower,
+            d <- uniroot(f         = function(d) eval(pfun) - cpower,
                          interval  = c(0, 10),
                          extendInt = "upX")$root
 
@@ -291,7 +308,7 @@ chase_sample_size <- function(N              = NULL,
         }
     }
 
-    output <- list(N               = N,
+    output <- list(N               = ceiling(N),
                    cpower          = cpower,
                    d               = d,
                    alpha.adj       = alpha.adj,

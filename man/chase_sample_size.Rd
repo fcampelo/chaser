@@ -5,9 +5,9 @@
 \title{Power and sample size calculations for the CHASE procedure}
 \usage{
 chase_sample_size(N = NULL, cpower = NULL, d = NULL, delta = NULL,
-  sigma = NULL, algorithms, alpha, mht.correction = "holm",
-  comparetype = c("one-vs-all", "all-vs-all"), direction = c("one-sided",
-  "two-sided"))
+  sigma = NULL, algorithms, alpha, mht.correction = "sidak",
+  comparetype = c("one.vs.all", "all.vs.all"), direction = c("one.sided",
+  "two.sided"))
 }
 \arguments{
 \item{N}{number of instances to be used in the experiment.}
@@ -109,10 +109,9 @@ are to be compared (that is, if there will be \emph{multiple hypotheses
 testing} - MHT) the significance level of each test must be corrected to
 avoid inflating the familywise error rate.
 
-In the current version only the single-step Holm correction is considered in
-the calculation of the sample size. However, if the analysis is eventually
-performed using the Bonferroni correction the loss of power is in most cases
-quite small.
+The current version implements the Sidak and Bonferroni corrections for the
+calculation of the sample size. Future versions may include less conservative
+approaches such as Benjamini-Hochberg's or Benjamini-Yekutieli's.
 }
 
 \section{Types of comparisons}{
@@ -120,12 +119,12 @@ quite small.
 Depending on the type of comparison being planned, a different set of tests
 can be performed: for instance, for a general comparison of methods (in which
 there is no algorithm that is of particular interest to the researcher) an
-"all-vs-all" comparison (\code{comparetype = "all-vs-all"}) should be
+"all-vs-all" comparison (\code{comparetype = "all.vs.all"}) should be
 performed, to obtain a complete ordering of performance among the
 alternatives. In this case \code{K * (K - 1) / 2} comparisons are performed.
 On the other hand, if there is a single method in which the researcher is
 particularly interested in (usually the "proposed algorithm") an "all-vs-one"
-comparison can be used (\code{comparetype = "one-vs-all"}), since in this
+comparison can be used (\code{comparetype = "one.vs.all"}), since in this
 case the question of interest is how one particular algorithm compares
 against the others. In this case the total number of comparisons is
 \code{K - 1}, which means that the MHT correction of \code{alpha} is smaller,
@@ -136,9 +135,9 @@ for a predefined sample size).
 \section{Directionality of the alternative hypothesis}{
 
 In the case of an "all-vs-one" comparison, the researcher may be interested
-in two kinds of alternative hypotheses: \code{direction = "two-sided"},
+in two kinds of alternative hypotheses: \code{direction = "two.sided"},
 if he wants to infer whether the "proposed algorithm" is \emph{different}
-from each of the competing approaches; or \code{direction = "one-sided"}, if
+from each of the competing approaches; or \code{direction = "one.sided"}, if
 he is only interested in determining whether it is \emph{better} than the
 others. In the former, the statistical question is
 "\emph{is the method better or worse than the others, or is it not
@@ -162,10 +161,33 @@ Y. Benjamini, Y.,Hochberg.
 multiple testing".
 Journal of the Royal Statistical Society Series B 57:289-300, 1995.
 
-Y. Benjamini and D. Yekutieli
+Y. Benjamini, D. Yekutieli.
 "The control of the false discovery rate in multiple testing under
 dependency".
 Annals of Statistics 29:1165-1188, 2001.
+
+D.A. Harrison, A.R. Brady.
+"Sample size and power calculations using the noncentral t-distribution"
+The Stata Journal 4(2):142-153, 2004.
+}
+\examples{
+# What's the required sample size to detect an effect size of d = 0.25
+# with power 0.8 and significance 0.05 for a pair of algorithms?
+chase_sample_size(cpower = .8, d = .25, algorithms = 2, alpha = .05,
+                  comparetype = "all", direction = "two")$N
+
+# What if we want to compare a 'proposed method' vs. 4 other algorithms,
+# and I'm only interested if my method is better than the others (1-sided
+# alternative)?
+chase_sample_size(cpower = .8, d = .25, algorithms = 5, alpha = .05,
+                  comparetype = "one", direction = "one")$N
+
+# Get the power x effect size curves for a fixed-sized benchmark set (N = 7).
+out <- chase_sample_size(N = 7, algorithms = 5, alpha = .05,
+                  comparetype = "one", direction = "one")
+plot(out$d, out$cpower, type = "b", pch = 16,
+     xlab = "Effect size d", ylab = "Power to detect",
+     main = "Effect size x Power", las = 1)
 }
 \author{
 Felipe Campelo (\email{fcampelo@ufmg.br}),
