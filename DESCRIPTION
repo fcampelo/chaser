@@ -1,7 +1,7 @@
 Package:      chaser
 Type:         Package
 Title:        Comparing Heuristics with Adaptive Sample-size Estimation
-Version:      0.0.0.9018
+Version:      0.0.0.9025
 Date:         2016-03-04
 Authors@R:    c(person("Felipe", "Campelo", email = "fcampelo@ufmg.br",
                     role = c("aut", "cre")),
@@ -16,7 +16,6 @@ Depends:      R (>= 3.2.2),
               boot (>= 1.3-17)
 Imports:      assertthat (>= 0.1)
 Suggests:     ExpDE,
-              smoof,
-              boot
+              smoof
 LazyData:     TRUE
 RoxygenNote:  5.0.1

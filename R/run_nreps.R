@@ -118,7 +118,8 @@
 #'                  distribution.fun  = "rexp",
 #'                  distribution.pars = list(rate = 0.5))
 #' out      <- run_nreps(instance, algo, dmax = 1,
-#'                       stat = "mean", method = "boot")
+#'                       stat = "mean",
+#'                       method = "boot")
 #' @export
 
 run_nreps <- function(instance,                    # instance parameters

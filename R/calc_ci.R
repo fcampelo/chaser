@@ -35,10 +35,14 @@
 #'    \item \code{se} - standard error
 #' }
 #'
+#' @importFrom boot boot
+#' @importFrom boot boot.ci
+#'
 #' @author Felipe Campelo (\email{fcampelo@@ufmg.br}),
 #'         Fernanda Takahashi (\email{fernandact@@ufmg.br})
 #'
 #' @examples
+#' \dontrun{
 #' x <- rnorm(n = 30, mean = 5, sd = 3)
 #' calc_ci(x) # parametric 95% CI on the mean
 #' calc_ci(x, stat = "median", alpha = .01) # parametric 99% CI on the median
@@ -46,7 +50,7 @@
 #' x <- rexp(n = 25, rate = 0.5)
 #' # bootstrap 95% CI on the mean
 #' calc_ci(x, method = "boot",
-#'         R = 1000, parallel = "multicore", ncpus = 4)
+#'         R = 1000, parallel = "multicore", ncpus = 4)}
 
 
 calc_ci <- function(x,                  # numeric:   vector of observations
@@ -71,7 +75,7 @@ calc_ci <- function(x,                  # numeric:   vector of observations
     if (method == "boot"){
         # define bootstrap parameters
         boot.R     <- 1000
-        boot.ncpus <- 4
+        boot.ncpus <- 1
         boot.par   <- "multicore"
         myarg <- list(...)
         if ("R" %in% names(myarg))        boot.R     <- myarg$R
@@ -129,7 +133,7 @@ calc_ci <- function(x,                  # numeric:   vector of observations
         } else if (method == "binom"){
             ci  <- sort(x)[qbinom(c(alpha / 2,
                                     1 - alpha / 2),
-                                  length(rankX), 0.5)]
+                                  length(x), 0.5)]
             est <- median(x)
             se  <- NA
         } else {stop("unrecognized method for calc_ci()")}

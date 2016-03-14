@@ -51,6 +51,7 @@ A.C. Davison, D.V. Hinkley.
 Cambridge University Press, 1st ed., 1997
 }
 \examples{
+\dontrun{
 x <- rnorm(n = 30, mean = 5, sd = 3)
 calc_ci(x) # parametric 95\% CI on the mean
 calc_ci(x, stat = "median", alpha = .01) # parametric 99\% CI on the median
@@ -58,7 +59,7 @@ calc_ci(x, stat = "median", alpha = .01) # parametric 99\% CI on the median
 x <- rexp(n = 25, rate = 0.5)
 # bootstrap 95\% CI on the mean
 calc_ci(x, method = "boot",
-        R = 1000, parallel = "multicore", ncpus = 4)
+        R = 1000, parallel = "multicore", ncpus = 4)}
 }
 \author{
 Felipe Campelo (\email{fcampelo@ufmg.br}),

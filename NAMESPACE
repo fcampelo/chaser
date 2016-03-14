@@ -3,3 +3,5 @@
 export(chase_sample_size)
 export(run_chase)
 export(run_nreps)
+importFrom(boot,boot)
+importFrom(boot,boot.ci)

@@ -6,7 +6,7 @@
 \usage{
 chase_sample_size(N = NULL, cpower = NULL, d = NULL, delta = NULL,
   sigma = NULL, algorithms, alpha, mht.correction = "sidak",
-  comparetype = c("one.vs.all", "all.vs.all"), direction = c("one.sided",
+  comparetype = c("one.vs.all", "all.vs.all"), alternative = c("one.sided",
   "two.sided"))
 }
 \arguments{
@@ -36,7 +36,7 @@ details).}
 \item{comparetype}{type of comparison planned (see \code{Types of
 comparisons} for details).}
 
-\item{direction}{type of alternative hypotheses planned (see
+\item{alternative}{type of alternative hypotheses planned (see
          \code{Directionality of the alternative hypothesis} for details).}
 }
 \value{
@@ -135,15 +135,17 @@ for a predefined sample size).
 \section{Directionality of the alternative hypothesis}{
 
 In the case of an "all-vs-one" comparison, the researcher may be interested
-in two kinds of alternative hypotheses: \code{direction = "two.sided"},
+in two kinds of alternative hypotheses: \code{alternative = "two.sided"},
 if he wants to infer whether the "proposed algorithm" is \emph{different}
-from each of the competing approaches; or \code{direction = "one.sided"}, if
+from each of the competing approaches; or \code{alternative = "one.sided"}, if
 he is only interested in determining whether it is \emph{better} than the
 others. In the former, the statistical question is
 "\emph{is the method better or worse than the others, or is it not
 different?}"; in the later, "\emph{is the method better han the others, or is
 it not?}". Using a one-sided alternative results in a smaller sample size
 required (or a higher statistical power for a predefined sample size).
+For "all-vs-all" experiments the one-sided alternative makes little sense,
+and the user should set \code{alternative = "two.sided"}.
 }
 
 \section{References}{
@@ -174,17 +176,17 @@ The Stata Journal 4(2):142-153, 2004.
 # What's the required sample size to detect an effect size of d = 0.25
 # with power 0.8 and significance 0.05 for a pair of algorithms?
 chase_sample_size(cpower = .8, d = .25, algorithms = 2, alpha = .05,
-                  comparetype = "all", direction = "two")$N
+                  comparetype = "all", alternative = "two")$N
 
 # What if we want to compare a 'proposed method' vs. 4 other algorithms,
 # and I'm only interested if my method is better than the others (1-sided
 # alternative)?
 chase_sample_size(cpower = .8, d = .25, algorithms = 5, alpha = .05,
-                  comparetype = "one", direction = "one")$N
+                  comparetype = "one", alternative = "one")$N
 
 # Get the power x effect size curves for a fixed-sized benchmark set (N = 7).
 out <- chase_sample_size(N = 7, algorithms = 5, alpha = .05,
-                  comparetype = "one", direction = "one")
+                  comparetype = "one", alternative = "one")
 plot(out$d, out$cpower, type = "b", pch = 16,
      xlab = "Effect size d", ylab = "Power to detect",
      main = "Effect size x Power", las = 1)
