@@ -38,3 +38,21 @@ dummyalgo <- function(distribution.fun = "rnorm",
 dummyinstance <- function(){
   # do nothing
 }
+
+
+# More stuff for testing (by Fernanda)
+distribution.test <- function (instance){
+    name.pars <- unlist(strsplit(instance$name, " ", fixed = T))[2]
+    pars <- read.pars(name.pars)
+    pars$n <- 1
+    name <- unlist(strsplit(instance$name, " ", fixed = T))[1]
+    list(Fbest = do.call(name, args = pars))
+}
+
+read.pars <- function(name.pars){
+    parts <- unlist(strsplit(name.pars, "=", fixed = T))
+    out <- list()
+    out[[parts[1]]] = as.numeric(parts[2])
+    return(out)
+}
+
