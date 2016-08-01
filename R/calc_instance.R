@@ -25,7 +25,7 @@
 #'    each algo-problem pair.
 #' @param alpha.correction is the type of alpha correction used - default is
 #'    \code{holm}
-#' @param comparetype defines if the comparition is 'all vc all' or 'one vs all'-
+#' @param compare.type defines if the comparition is 'all vc all' or 'one vs all'-
 #'    default is \code{one}
 #' @param direction is the direction of the distribution 1 for 1-sided and 2 for
 #'    2-sided - default is \code{2}
@@ -48,18 +48,18 @@
 
 calc_instance <- function(ninstances=NULL,           # number of instances
                           cpower=NULL,               # power
-                          d=NULL,                    # proportion of standard deviations
-                          algorithms,                # list of algorithms
+                          d=NULL,                    # normalized standard deviations
+                          algorithms,                # list or number of algorithms
                           alpha = 0.05,              # significance level for CI
                           alpha.correction = 'holm', #
-                          comparetype = 'one',       # 'one' for one vs. all and 'all' for all vs. all
+                          compare.type = 'one',       # 'one' for one vs. all and 'all' for all vs. all
                           direction = 2,             # 1 for one sided and 2 for 2 sided
                           nmax = Inf                 # maximum allowed sample size
 )
 {
 
     assertthat::assert_that(
-        (is.null(ninstances)&& !is.null(cpower)&& !is.null(d)) || (!is.null(ninstances)&& is.null(cpower)|| is.null(d)),
+        (is.null(ninstances)&& !is.null(cpower)&& !is.null(d)) || (!is.null(ninstances)&&assertthat::is.count(ninstances)&& is.null(cpower)|| is.null(d)),
         is.list(algorithms)|| assertthat::is.count(algorithms),
         is.numeric(alpha) && alpha > 0 && alpha < 1,
         is.infinite(nmax) || assertthat::is.count(nmax)
@@ -70,7 +70,7 @@ calc_instance <- function(ninstances=NULL,           # number of instances
     }else{
         nalg <- algorithms
     }
-    if (tolower(comparetype == "one")){
+    if (tolower(compare.type == "one")){
         k.correction <- nalg-1
     }else{
         k.correction <- nalg*(nalg-1)/2
