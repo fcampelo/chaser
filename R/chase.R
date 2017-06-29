@@ -96,17 +96,17 @@
 #'
 #' @export
 
-run_chase <- function(instances,                   # list of instances
-                      algorithms,                  # list of algorithms
-                      dmax,                        # desired (max) CI halfwidth
-                      #stat   = c("mean", "median"),# statistic to use
-                      stat   = "mean",
-                      #method = c("param", "boot", "binom"), # technique to calculate CI
-                      method = "param",
-                      alpha  = 0.05,               # significance level for CI
-                      nstart = 20,                 # initial number of samples
-                      nmax   = Inf,                # maximum allowed sample size
-                      seed   = NULL,               # seed for PRNG
+chase <- function(instances,                   # list of instances
+                  algorithms,                  # list of algorithms
+                  dmax,                        # desired (max) CI halfwidth instance
+                  Dmax,                        # desired (max) CI halfwidth algorithm
+                  stat   = "mean",
+                  method = "param",
+                  alpha  = 0.05,               # significance level for CI
+                  nstart = 20,                 # initial number of samples
+                  nmax   = Inf,                # maximum allowed sample size
+                  Nstart = 5,
+                  seed   = NULL,               # seed for PRNG
                       ...)                         # parameters for boot
 {
 
@@ -117,11 +117,15 @@ run_chase <- function(instances,                   # list of instances
         assertthat::is.count(nstart),
         is.infinite(nmax) || assertthat::is.count(nmax),
         nmax > nstart,
+        assertthat::is.count(Nstart),
         is.null(seed) || assertthat::is.count(seed))
 
     # Number of instances and algorithms
     nprobs <- length(instances)
     nalgos <- length(algorithms)
+
+    assertthat::assert_that(
+        Nstart <= nprobs)
 
     for (i in 1:nprobs){
         assertthat::assert_that(
@@ -171,8 +175,9 @@ run_chase <- function(instances,                   # list of instances
     # Iterative cycle
     rawcount <- 0
     sumcount <- 0
+    delta <- numeric(0)
     for (i in 1:nalgos){
-        for (j in 1:nprobs){
+        for (j in 1:Nstart){
             # Generate the data for algorithm i on instance j
             data.ij <- run_nreps(instance = instances[[j]],
                                  algo     = algorithms[[i]],
@@ -183,7 +188,7 @@ run_chase <- function(instances,                   # list of instances
                                  nstart   = nstart,
                                  nmax     = nmax,
                                  seed     = seed)#,
-                                 #...)
+            #...)
 
             # If needed, grow the data.raw dataframe
             nij <- data.ij$n
@@ -209,14 +214,73 @@ run_chase <- function(instances,                   # list of instances
                 x.CIu     = data.ij$x.CI[2],
                 x.n       = nij)
         }
+        CI <- calc_ci(as.vector(na.omit(data.summary$x.est[data.summary$Algorithm == algorithms[[i]]$name])),
+                      stat   = stat,
+                      method = method,
+                      alpha  = alpha,
+                      ...)
+
+        delta[i]   <- diff(CI$ci) / 2
+    }
+
+    Dworst <- max(delta)
+
+    while (Dworst >= Dmax && j < nprobs){
+        j <- j + 1
+        for (i in 1:nalgos){
+            # Generate the data for algorithm i on instance j
+            data.ij <- run_nreps(instance = instances[[j]],
+                                 algo     = algorithms[[i]],
+                                 dmax     = dmax,
+                                 stat     = stat,
+                                 method   = method,
+                                 alpha    = alpha,
+                                 nstart   = nstart,
+                                 nmax     = nmax,
+                                 seed     = seed)#,
+            #...)
+
+            # If needed, grow the data.raw dataframe
+            nij <- data.ij$n
+            if (rawcount + nij > nrow(data.raw)){
+                data.raw <- rbind(data.raw, empty.raw.df)
+            }
+
+            # Update data.raw
+            data.raw[(rawcount + 1):(rawcount + nij), ] <- data.frame(
+                Algorithm   = rep(algorithms[[i]]$name, nij),
+                Instance    = rep(instances[[j]]$name, nij),
+                Observation = data.ij$x)
+            rawcount <- rawcount + nij
+
+            # Update data.summary
+            sumcount <- sumcount + 1
+            data.summary[sumcount, ] <- data.frame(
+                Algorithm = algorithms[[i]]$name,
+                Instance  = instances[[j]]$name,
+                x.est     = data.ij$x.est,
+                x.se      = data.ij$se,
+                x.CIl     = data.ij$x.CI[1],
+                x.CIu     = data.ij$x.CI[2],
+                x.n       = nij)
+
+            CI <- calc_ci(as.vector(na.omit(data.summary$x.est[data.summary$Algorithm == algorithms[[i]]$name])),
+                           stat   = stat,
+                           method = method,
+                           alpha  = alpha,
+                           ...)
+            delta[i]   <- diff(CI$ci) / 2
+        }
+        Dworst <- max(delta)
     }
 
     # Remove any extra rows from data.raw
     data.raw <- data.raw[1:rawcount, ]
+    data.summary <- data.summary[1:sumcount,]
 
     output<-list(data.raw     = data.raw,
                  data.summary = data.summary,
-                 instances    = instances,
+                 instances    = instances[1:j],
                  algorithms   = algorithms,
                  dmax         = dmax,
                  stat         = stat,

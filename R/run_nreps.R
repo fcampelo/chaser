@@ -123,8 +123,10 @@
 run_nreps <- function(instance,                    # instance parameters
                       algo,                        # algorithm parameters
                       dmax,                        # desired (max) CI halfwidth
-                      stat   = c("mean", "median"),# statistic to use
-                      method = c("param", "boot", "binom"), # technique to calculate CI
+                      #stat   = c("mean", "median"),# statistic to use
+                      stat   = "mean",
+                      #method = c("param", "boot", "binom"), # technique to calculate CI
+                      method = "param",
                       alpha  = 0.05,               # significance level for CI
                       nstart = 20,                 # initial number of samples
                       nmax   = Inf,                # maximum allowed sample size
