@@ -6,9 +6,9 @@ Belo Horizonte, Brazil
 
 ***
 
-Implementation of the _chaser_ package, with routines for automatically determining the sample size needed for performing comparative experiments with metaheuristics.
-
-This is still a development version. For more details please contact the authors above.
+Old files of the initial implementation of the _chaser_ package (now 
+renamed CHESS, and moved to a different repository). I'm keeping this just to 
+maintain a development log.
 
 Cheers,  
 Felipe
